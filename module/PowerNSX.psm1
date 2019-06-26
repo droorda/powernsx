@@ -2707,7 +2707,9 @@ Function ValidateLoadBalancerMemberSpec {
             throw "XML Element specified does not contain a name property.  Create with New-NsxLoadbalancerMemberSpec"
         }
         if ( -not ( $argument | get-member -name ipAddress -Membertype Properties)) {
-            throw "XML Element specified does not contain an ipAddress property.  Create with New-NsxLoadbalancerMemberSpec"
+            if ( -not ( $argument | get-member -name groupingObjectId -Membertype Properties)) {
+                throw "XML Element specified does not contain an ipAddress property.  Create with New-NsxLoadbalancerMemberSpec"
+            }
         }
         if ( -not ( $argument | get-member -name weight -Membertype Properties)) {
             throw "XML Element specified does not contain a weight property.  Create with New-NsxLoadbalancerMemberSpec"
