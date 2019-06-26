@@ -30547,8 +30547,8 @@ function New-NsxLoadBalancerPool {
 
     process {
 
-        #Create private xml element
-        $_LoadBalancer = $LoadBalancer.CloneNode($true)
+        #Create private xml element from Current loadbalancer configuration
+        $_LoadBalancer = (Get-NsxEdge -objectId $LoadBalancer.edgeId | Get-NsxLoadBalancer).CloneNode($true)
 
         #Store the edgeId and remove it from the XML as we need to post it...
         $edgeId = $_LoadBalancer.edgeId
