@@ -29963,6 +29963,219 @@ function New-NsxLoadBalancerMonitor {
 
     end {}
 }
+Function Update-NsxLoadBalancerMonitor {
+
+    <#
+    .SYNOPSIS
+    Creates a new LoadBalancer Service Monitor on the specified
+    Edge Services Gateway.
+
+    .DESCRIPTION
+    An NSX Edge Service Gateway provides all NSX Edge services such as firewall,
+    NAT, DHCP, VPN, load balancing, and high availability.
+
+    The NSX Edge load balancer enables network traffic to follow multiple paths
+    to a specific destination. It distributes incoming service requests evenly
+    among multiple servers in such a way that the load distribution is
+    transparent to users. Load balancing thus helps in achieving optimal
+    resource utilization, maximizing throughput, minimizing response time, and
+    avoiding overload. NSX Edge provides load balancing up to Layer 7.
+
+    Service monitors define health check parameters for a particular type of
+    network traffic. When you associate a service monitor with a pool, the pool
+    members are monitored according to the service monitor parameters.
+
+    This cmdlet creates a new LoadBalancer Service monitor on a specified
+    Load Balancer
+
+    .EXAMPLE
+
+    PS C:\> Get-NsxEdge Edge01 | Get-NsxLoadBalancer | New-NsxLoadBalancerMonitor
+    -Name Web-Monitor -interval 10 -Timeout 10 -MaxRetries 3 -Type
+    HTTPS -Method GET -Url "/WAPI/api/status" -Expected "200 OK"
+
+    #>
+    [CmdLetBinding(DefaultParameterSetName="HTTP")]
+
+    param (
+
+        [Parameter (Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="UDP")]
+            [ValidateScript({ ValidateLoadBalancer $_ })]
+            [System.Xml.XmlElement]$LoadBalancer,
+        [Parameter (Mandatory=$true, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$true, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$true, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$true, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$true, ParameterSetName="UDP")]
+            [ValidateNotNullOrEmpty()]
+            [string]$monitorID,
+        [Parameter (Mandatory=$true, ParameterSetName="HTTP")]
+            [switch]$TypeHttp,
+        [Parameter (Mandatory=$true, ParameterSetName="HTTPS")]
+            [switch]$TypeHttps,
+        [Parameter (Mandatory=$true, ParameterSetName="TCP")]
+            [switch]$TypeTcp,
+        [Parameter (Mandatory=$true, ParameterSetName="ICMP")]
+            [switch]$TypeIcmp,
+        [Parameter (Mandatory=$true, ParameterSetName="UDP")]
+            [switch]$TypeUdp,
+        [Parameter (Mandatory=$true, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$true, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$true, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$true, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$true, ParameterSetName="UDP")]
+            [ValidateNotNullOrEmpty()]
+            [string]$Name,
+        [Parameter (Mandatory=$true, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$true, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$true, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$true, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$true, ParameterSetName="UDP")]
+            [ValidateNotNullOrEmpty()]
+            [string]$Interval,
+        [Parameter (Mandatory=$true, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$true, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$true, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$true, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$true, ParameterSetName="UDP")]
+            [ValidateNotNullOrEmpty()]
+            [string]$Timeout,
+        [Parameter (Mandatory=$true, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$true, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$true, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$true, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$true, ParameterSetName="UDP")]
+            [ValidateNotNullOrEmpty()]
+            [string]$MaxRetries,
+        [Parameter (Mandatory=$true, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$true, ParameterSetName="HTTPS")]
+            [ValidateSet("GET","POST","OPTIONS", IgnoreCase=$False)]
+            [string]$Method,
+        [Parameter (Mandatory=$true, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$true, ParameterSetName="HTTPS")]
+            [ValidateNotNullOrEmpty()]
+            [string]$Url,
+        [Parameter (Mandatory=$false, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$false, ParameterSetName="HTTPS")]
+            [ValidateNotNullOrEmpty()]
+            [string]$Expected,
+        [Parameter (Mandatory=$false, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$false, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$false, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$false, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$false, ParameterSetName="UDP")]
+            [ValidateNotNullOrEmpty()]
+            [string]$Send,
+        [Parameter (Mandatory=$false, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$false, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$false, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$false, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$false, ParameterSetName="UDP")]
+            [ValidateNotNullOrEmpty()]
+            [string]$Receive,
+        [Parameter (Mandatory=$false, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$false, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$false, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$false, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$false, ParameterSetName="UDP")]
+            [ValidateNotNullOrEmpty()]
+            [string]$Extension,
+        [Parameter (Mandatory=$false, ParameterSetName="HTTP")]
+        [Parameter (Mandatory=$false, ParameterSetName="HTTPS")]
+        [Parameter (Mandatory=$false, ParameterSetName="TCP")]
+        [Parameter (Mandatory=$false, ParameterSetName="ICMP")]
+        [Parameter (Mandatory=$false, ParameterSetName="UDP")]
+            #PowerNSX Connection object
+            [ValidateNotNullOrEmpty()]
+            [PSCustomObject]$Connection=$defaultNSXConnection
+    )
+
+    begin {
+    }
+
+    process {
+
+        #Store the edgeId
+        $edgeId = $LoadBalancer.edgeId
+
+        if ( -not $LoadBalancer.enabled -eq 'true' ) {
+            write-warning "Load Balancer feature is not enabled on edge $($edgeId). Use Set-NsxLoadBalancer -Enabled to enable."
+        }
+
+        [System.XML.XMLElement]$xmlmonitor = $LoadBalancer.OwnerDocument.CreateElement("monitor")
+
+        #Common Elements
+        Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "name" -xmlElementText $Name
+        Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "interval" -xmlElementText $Interval
+        Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "timeout" -xmlElementText $Timeout
+        Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "maxRetries" -xmlElementText $MaxRetries
+
+        #Optional
+        if ( $PSBoundParameters.ContainsKey('Send')) {
+            Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "send" -xmlElementText $Send
+        }
+
+        if ( $PSBoundParameters.ContainsKey('Receive')) {
+            Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "receive" -xmlElementText $Receive
+        }
+
+        if ( $PSBoundParameters.ContainsKey('Extension')) {
+            Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "extension" -xmlElementText $Extension
+        }
+
+        #Type specific
+        switch -regex ( $PsCmdlet.ParameterSetName ) {
+
+            "HTTP" {
+                #will match both HTTP and HTTPS due to regex switch handling...
+                if ( $TypeHttp ) {
+                    Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "type" -xmlElementText "http"
+                } else {
+                    Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "type" -xmlElementText "https"
+                }
+
+                if ( $PSBoundParameters.ContainsKey('Method')) {
+                    Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "method" -xmlElementText $Method
+                }
+
+                if ( $PSBoundParameters.ContainsKey('Url')) {
+                    Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "url" -xmlElementText $Url
+                }
+
+                if ( $PSBoundParameters.ContainsKey('Expected')) {
+                    Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "expected" -xmlElementText $Expected
+                }
+            }
+
+            "ICMP" {
+                Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "type" -xmlElementText "icmp"
+            }
+
+            "TCP" {
+                Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "type" -xmlElementText "tcp"
+            }
+
+            "UDP" {
+                Add-XmlElement -xmlRoot $xmlmonitor -xmlElementName "type" -xmlElementText "udp"
+            }
+        }
+
+        $URI = "/api/4.0/edges/$edgeId/loadbalancer/config/monitors/$monitorID"
+        $body = $xmlmonitor.OuterXml
+
+        Write-Progress -activity "Update Edge Services Gateway $($edgeId)" -status "Load Balancer Monitor Config"
+        $null = invoke-nsxwebrequest -method "PUT" -uri $URI -body $body -connection $connection
+        write-progress -activity "Update Edge Services Gateway $($edgeId)" -completed
+
+        get-nsxedge -objectId $edgeId -connection $connection | Get-NsxLoadBalancer | Get-NsxLoadBalancerMonitor -name $Name
+    }
+
+    end {}
+}
 
 function Remove-NsxLoadBalancerMonitor {
 
