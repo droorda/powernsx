@@ -30383,6 +30383,15 @@ function New-NsxLoadBalancerApplicationProfile {
             [ValidateSet("insert", "prefix", "app")]
             [string]$CookieMode,
         [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [string]$clientSslCiphers='DEFAULT',
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [string]$clientSslClientAuth='ignore',
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [string]$clientSslServiceCertificate,
+        [Parameter (Mandatory=$False)]
             #PowerNSX Connection object
             [ValidateNotNullOrEmpty()]
             [PSCustomObject]$Connection=$defaultNSXConnection
@@ -30434,6 +30443,13 @@ function New-NsxLoadBalancerApplicationProfile {
             If ( $PsBoundParameters.ContainsKey('PersistenceExpiry')) {
                 Add-XmlElement -xmlRoot $xmlPersistence -xmlElementName "expire" -xmlElementText $PersistenceExpiry
             }
+        }
+        If ( $PsBoundParameters.ContainsKey('clientSslServiceCertificate')) {
+            [System.XML.XMLElement]$xmlClientSsl = $_LoadBalancer.OwnerDocument.CreateElement("clientSsl")
+            $xmlapplicationProfile.appendChild($xmlClientSsl) | out-null
+            Add-XmlElement -xmlRoot $xmlClientSsl -xmlElementName "ciphers" -xmlElementText $clientSslCiphers
+            Add-XmlElement -xmlRoot $xmlClientSsl -xmlElementName "clientAuth" -xmlElementText $clientSslClientAuth
+            Add-XmlElement -xmlRoot $xmlClientSsl -xmlElementName "serviceCertificate" -xmlElementText $clientSslServiceCertificate
         }
 
         $URI = "/api/4.0/edges/$edgeId/loadbalancer/config"
@@ -31556,6 +31572,9 @@ function Add-NsxLoadBalancerVip {
             [ValidateNotNullOrEmpty()]
             [int]$ConnectionRateLimit=0,
         [Parameter (Mandatory=$False)]
+            [ValidateNotNull()]
+            [string]$applicationRuleId,
+        [Parameter (Mandatory=$False)]
             #PowerNSX Connection object
             [ValidateNotNullOrEmpty()]
             [PSCustomObject]$Connection=$defaultNSXConnection
@@ -31592,6 +31611,11 @@ function Add-NsxLoadBalancerVip {
         Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "applicationProfileId" -xmlElementText $ApplicationProfile.applicationProfileId
         Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "defaultPoolId" -xmlElementText $DefaultPool.poolId
         Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "accelerationEnabled" -xmlElementText $AccelerationEnabled
+
+        if ($applicationRuleId){
+            Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "applicationRuleId" -xmlElementText $applicationRuleId
+        }
+
 
         $URI = "/api/4.0/edges/$($EdgeId)/loadbalancer/config"
         $body = $_LoadBalancer.OuterXml
