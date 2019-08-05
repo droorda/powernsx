@@ -3674,7 +3674,7 @@ function Import-NsxObject {
 # Core functions
 function Invoke-InternalWebRequest {
 
-     <#
+    <#
     .SYNOPSIS
     Constructs and performs REST call to NSX API while hiding platform specific
     limitations.
@@ -3698,11 +3698,11 @@ function Invoke-InternalWebRequest {
             [ValidateSet("get", "put", "post", "delete")]
             [string]$Method,
         [parameter(Mandatory = $true)]
-            [hashtable]$Headers=@{},
+            [hashtable]$Headers, #=@{}
         [parameter(Mandatory = $true)]
             [string]$ContentType,
         [parameter(Mandatory = $true)]
-            [int]$TimeoutSec=0,
+            [int]$TimeoutSec, #=0,
         [parameter(Mandatory = $false)]
             [string]$body,
         [parameter(Mandatory = $false)]
@@ -3808,7 +3808,7 @@ function Invoke-InternalWebRequest {
                 $response.Dispose()
             }
             if ( test-path variable:content ) {
-                if ( $content -ne $null ) {
+                if ( $null -ne $content ) {
                     $content.dispose()
                 }
             }
@@ -3896,7 +3896,7 @@ function Invoke-NsxRestMethod {
         [Parameter (Mandatory=$true,ParameterSetName="Parameter")]
             #URI Prefix to support URI rewrite scenario
             [AllowEmptyString()]
-            [string]$UriPrefix="",
+            [string]$UriPrefix, #="",
         [Parameter (Mandatory=$true,ParameterSetName="Parameter")]
             #Validates the certificate presented by NSX Manager for HTTPS connections
             [bool]$ValidateCertificate,
@@ -3936,7 +3936,7 @@ function Invoke-NsxRestMethod {
     if ( $pscmdlet.ParameterSetName -eq "ConnectionObj" ) {
         #ensure we were either called with a connection or there is a defaultConnection (user has
         #called connect-nsxserver)
-        if ( $connection -eq $null) {
+        if ( $null -eq $connection ) {
 
             #Now we need to assume that defaultnsxconnection does not exist...
             if ( -not (test-path variable:global:DefaultNSXConnection) ) {
@@ -4128,7 +4128,7 @@ function Invoke-NsxWebRequest {
         [Parameter (Mandatory=$true,ParameterSetName="Parameter")]
             #URI prefix to support URI rewrite scenario
             [AllowEmptyString()]
-            [string]$UriPrefix="",
+            [string]$UriPrefix, #="",
         [Parameter (Mandatory=$true,ParameterSetName="Parameter")]
             #Validates the certificate presented by NSX Manager for HTTPS connections
             [bool]$ValidateCertificate,
@@ -4160,7 +4160,7 @@ function Invoke-NsxWebRequest {
     if ( $pscmdlet.ParameterSetName -eq "ConnectionObj" ) {
         #ensure we were either called with a connection or there is a defaultConnection (user has
         #called connect-nsxserver)
-        if ( $connection -eq $null) {
+        if ( $null -eq $connection ) {
 
             #Now we need to assume that defaultnsxconnection does not exist...
             if ( -not (test-path variable:global:DefaultNSXConnection) ) {
@@ -5094,6 +5094,7 @@ function Wait-NsxJob {
             try {
                 $response = invoke-nsxwebrequest -method "get" -uri "$JobStatusUri/$jobId" -connection $connection
                 [xml]$job = $response.Content
+                $job | out-null
 
                 write-debug "$($MyInvocation.MyCommand.Name) : Got job from $JobStatusUri for job $jobid"
 
@@ -5868,7 +5869,7 @@ function New-NsxManager{
         $TargetVMHost = Get-Cluster $ClusterName | Get-VMHost | Where-Object {$_.ConnectionState -eq 'Connected'} | Sort-Object MemoryUsageGB | select-object -first 1
 
         # throw an error if there are not any hosts suitable for deployment (ie: all hosts are in maint. mode)
-        if ($targetVmHost -eq $null) {
+        if ( $null -eq $targetVmHost ) {
             throw "Unable to deploy NSX Manager to cluster: $ClusterName. There are no VMHosts suitable for deployment. Check the selected cluster to ensure hosts exist and that at least one is connected and not in Maintenance Mode."
         }
         else {
@@ -10908,7 +10909,7 @@ function Grant-NsxSpoofguardNicApproval {
             [string[]]$IpAddress,
         [Parameter (Mandatory=$True, ParameterSetName="ApproveAll")]
             [ValidateNotNullOrEmpty()]
-            [switch]$ApproveAllDetectedIps=$False,
+            [switch]$ApproveAllDetectedIps, #=$False,
         [Parameter (Mandatory=$False)]
             #Prompt for confirmation.  Specify as -confirm:$false to disable confirmation prompt
             [switch]$Confirm=$true,
@@ -11020,6 +11021,7 @@ function Grant-NsxSpoofguardNicApproval {
             $URI = "/api/4.0/services/spoofguard/$($policyId)?action=publish"
             $response = invoke-nsxwebrequest -method "post" -uri $URI -connection $connection
         }
+        $responce | out-null
 
         Get-NsxSpoofguardPolicy -objectId $policyId -connection $connection | Get-NsxSpoofguardNic -MAC $_SpoofguardNic.detectedMacAddress -connection $connection
 
@@ -23288,7 +23290,7 @@ function Remove-NsxSecurityGroupMember {
 
                     $existingMember = (Invoke-XpathQuery -QueryMethod SelectSingleNode -Node $_SecurityGroup -query "child::member[objectId=`"$MemberMoref`"]" )
 
-                    if ( $existingMember -eq $null ) {
+                    if ( $null -eq $existingMember ) {
                         throw "Member $($_Member.Name) ($MemberMoref) is not a member of the specified SecurityGroup."
                     }
                     else {
