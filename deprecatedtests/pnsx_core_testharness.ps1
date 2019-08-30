@@ -19,7 +19,7 @@ If not, see https://www.gnu.org/licenses/gpl-2.0.html.
 
 The full text of the General Public License 2.0 is provided in the COPYING file.
 Some files may be comprised of various open source software components, each of which
-has its own license that is located in the source code of the respective component.”
+has its own license that is located in the source code of the respective component."
 #>
 
 param ([parameter (Mandatory=$true)]$nsxserver)
@@ -52,7 +52,7 @@ $steps = @(
     {get-vm | where { $_.name -match 'web'} | Connect-NsxLogicalSwitch $webls | out-null},
     {get-vm | where { $_.name -match 'app'} | Connect-NsxLogicalSwitch $appls | out-null},
     {get-vm | where { $_.name -match 'db'} | Connect-NsxLogicalSwitch $dbls | out-null}
-    
+
 
 )
 
@@ -66,9 +66,9 @@ $cleanup = @(
 )
 
 
-function Test { 
+function Test {
 
-    foreach ( $step in $steps ) { 
+    foreach ( $step in $steps ) {
 
         #Show me first
         write-host -foregroundcolor yellow ">>> $step"
@@ -78,9 +78,9 @@ function Test {
     }
 }
 
-function Cleanup { 
+function Cleanup {
 
-    foreach ( $step in $cleanup ) { 
+    foreach ( $step in $cleanup ) {
 
         #Show me first
         write-host -foregroundcolor yellow ">>> $step"

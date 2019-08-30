@@ -13,7 +13,7 @@ If not, see https://www.gnu.org/licenses/gpl-2.0.html.
 
 The full text of the General Public License 2.0 is provided in the COPYING file.
 Some files may be comprised of various open source software components, each of which
-has its own license that is located in the source code of the respective component.”
+has its own license that is located in the source code of the respective component."
 #>
 
 #Spins up a test DLR and exercises all DLR cmdlet functionality
@@ -61,7 +61,7 @@ $PrefixNetwork = "1.2.3.0/24"
 New-NsxLogicalRouter -Name $name -ManagementPortGroup $mgt -Interface $vnic0,$vnic1,$vnic2 -Cluster $cl -Datastore $ds
 
 
-#Add a LR vnic 
+#Add a LR vnic
 Get-NsxLogicalRouter $name | New-NsxLogicalRouterInterface -Name Test -Type internal -ConnectedTo $ls4 -PrimaryAddress 4.4.4.1 -SubnetPrefixLength 24
 
 #Update the LR vNic
@@ -74,7 +74,7 @@ Get-NsxLogicalRouter $name | Get-NsxLogicalRouterInterface -Index 12 | Remove-Ns
 #Static Routing
 ####
 
-#Create a prefix 
+#Create a prefix
 Get-NsxLogicalRouter $Name | Get-NsxLogicalRouterRouting | New-NsxLogicalRouterPrefix -Name $PrefixName -Network $PrefixNetwork -confirm:$false
 
 

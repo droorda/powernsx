@@ -34,7 +34,7 @@ If not, see https://www.gnu.org/licenses/gpl-2.0.html.
 
 The full text of the General Public License 2.0 is provided in the COPYING file.
 Some files may be comprised of various open source software components, each of which
-has its own license that is located in the source code of the respective component.”
+has its own license that is located in the source code of the respective component."
 #>
 
 
@@ -107,7 +107,7 @@ $number_vms = ($vms_total | Measure-Object).count
 foreach($vm in $vms_total) {
   $vmstat = "" | Select VmName, CPUAvg, MemAvg
   $vmstat.VmName = $vm.name
-  
+
   $statcpu = Get-Stat -Entity ($vm) -IntervalMins 1 -MaxSamples 5 -stat cpu.usage.average
   $statmem = Get-Stat -Entity ($vm) -IntervalMins 1 -MaxSamples 5 -stat mem.usage.average
 
@@ -128,8 +128,8 @@ foreach($vm in $vms_total) {
 $allvms += $vmstat
 }
 write-host -foregroundcolor "Green" "List of Pool_VM Servers: $($allvms | Format-Table | Out-String)"
-"List of Pool_VM Servers: $($allvms | Format-Table | Out-String)" >> $Output_File 
-  
+"List of Pool_VM Servers: $($allvms | Format-Table | Out-String)" >> $Output_File
+
 
 # If less than $VM_Min Pool_VMs AND asked to Clone_VM, THEN Create new Clone_VM + Add to LB_Pool
 if (($number_vms -lt $VM_Max) -and ($clone_vm -eq $true)) {
@@ -140,15 +140,15 @@ if (($number_vms -lt $VM_Max) -and ($clone_vm -eq $true)) {
   # Create new Pool_VM
   $new_vm = "$VM_Clone_PrefixName$($number_vms-$VM_Min+1)"
   write-host -foregroundcolor "Green" "Adding new Clone_VM $new_vm..."
-  "Adding new Clone_VM $new_vm..." >> $Output_File 
+  "Adding new Clone_VM $new_vm..." >> $Output_File
   $vmhost = $cluster_compute | Get-vmhost | Sort-Object MemoryUsageGB | Select -first 1
   New-VM -Name $new_vm -Template $vm_template -vmhost $vmhost
   Start-VM -VM $new_vm
-  
+
   # Add Clone_VM to NSX Edge LB Pool
   # Wait for the VMTools to get the IP@ of the Clone_VM
   write-host -foregroundcolor "Green" "Waiting for VMTools to get new Pool VM $new_vm IP@..."
-  "Waiting for VMTools to get new Pool VM $new_vm IP@" >> $Output_File 
+  "Waiting for VMTools to get new Pool VM $new_vm IP@" >> $Output_File
   $timeout = new-timespan -Minutes 10
   $sw = [diagnostics.stopwatch]::StartNew()
   while (($sw.elapsed -lt $timeout) -and !((Get-VM -Name $new_vm).guest.ipaddress)){
@@ -159,10 +159,10 @@ if (($number_vms -lt $VM_Max) -and ($clone_vm -eq $true)) {
     $new_vm_ipv4_address = (Get-VM -Name $new_vm).Guest.IPAddress | where {([IPAddress]$_).AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork}
     if (!$new_vm_ipv4_address) {
       write-host -foregroundcolor "Red" "The new Clone_VM $new_vm does not have an IPv4 address..."
-      "The new Clone_VM $new_vm does not have an IPv4 address..." >> $Output_File 
+      "The new Clone_VM $new_vm does not have an IPv4 address..." >> $Output_File
     } else {
       write-host -foregroundcolor "Green" "Adding new Clone_VM $new_vm in NSX Edge $Edge_Name Pool $LB_Pool_Name..."
-      "Adding new Clone_VM $new_vm in NSX Edge $Edge_Name Pool $LB_Pool_Name..." >> $Output_File 
+      "Adding new Clone_VM $new_vm in NSX Edge $Edge_Name Pool $LB_Pool_Name..." >> $Output_File
       # Add the Clone_VM in the NSX LB Pool
       # Note: Adding VM with option IP@ (-IpAddress) and not Name (-Name) because Name not allowed with Pools in transparent mode when VM has both IPv4 and IPv6.
       $lb_pool = Get-NsxEdge $Edge_Name | Get-NsxLoadBalancer | Get-NsxLoadBalancerPool -name $LB_Pool_Name
@@ -179,7 +179,7 @@ if (($clone_vm -eq $false) -and ($number_vms -gt $VM_Min) -and ($number_vms -eq 
   if ($VM_Drain) {
      if ((Get-NsxEdge $Edge_Name | Get-NsxLoadBalancer | Get-NsxLoadBalancerVIP -name $Edge_VIP).accelerationEnabled) {
        write-host -foregroundcolor "Green" "Moving the Clone_VM $remove_vm in NSX Edge $Edge_Name Pool $LB_Pool_Name in Drain mode for $VM_Drain_Timer minute(s)..."
-       "Moving the Clone_VM $remove_vm in NSX Edge $Edge_Name Pool $LB_Pool_Name in Drain mode for $VM_Drain_Timer minute(s)..." >> $Output_File 
+       "Moving the Clone_VM $remove_vm in NSX Edge $Edge_Name Pool $LB_Pool_Name in Drain mode for $VM_Drain_Timer minute(s)..." >> $Output_File
        Get-NsxEdge $Edge_Name | Get-NsxLoadBalancer | Get-NsxLoadBalancerPool -name $LB_Pool_Name | Get-NsxLoadBalancerPoolMember $remove_vm | Set-NsxLoadBalancerPoolMember -state drain
        Start-Sleep -s (60*$VM_Drain_Timer)
      } else {
@@ -189,12 +189,12 @@ if (($clone_vm -eq $false) -and ($number_vms -gt $VM_Min) -and ($number_vms -eq 
   }
   # Delete the Clone_VM in the NSX LB Pool
   write-host -foregroundcolor "Green" "Removing Clone_VM $remove_vm in NSX Edge $Edge_Name Pool $LB_Pool_Name..."
-  "Removing Clone_VM $remove_vm in NSX Edge $Edge_Name Pool $LB_Pool_Name..." >> $Output_File 
+  "Removing Clone_VM $remove_vm in NSX Edge $Edge_Name Pool $LB_Pool_Name..." >> $Output_File
   $lb_pool = Get-NsxEdge $Edge_Name | Get-NsxLoadBalancer | Get-NsxLoadBalancerPool -name $LB_Pool_Name
   $lb_pool = $lb_pool | Get-NsxLoadBalancerPoolMember $remove_vm | remove-nsxLoadbalancerPoolMember -confirm:$false
   # Delete the Clone_VM in the NSX LB Pool
   write-host -foregroundcolor "Green" "Deleting Clone_VM $remove_vm..."
-  "Deleting Clone_VM $remove_vm ..." >> $Output_File 
+  "Deleting Clone_VM $remove_vm ..." >> $Output_File
   Stop-VM -VM $remove_vm -Confirm:$false
   Remove-VM -VM $remove_vm -DeletePermanently -Confirm:$false
 }

@@ -13,7 +13,7 @@ If not, see https://www.gnu.org/licenses/gpl-2.0.html.
 
 The full text of the General Public License 2.0 is provided in the COPYING file.
 Some files may be comprised of various open source software components, each of which
-has its own license that is located in the source code of the respective component.”
+has its own license that is located in the source code of the respective component."
 #>
 
 #Creates a test FW Section and exercises all DFW and associated grouping construct cmdlet functionality
@@ -56,9 +56,9 @@ $vnic0 = New-NsxEdgeInterfaceSpec -index 1 -Type uplink -Name "vNic1" -Connected
 New-NsxEdge -Name $dfwedgename -Interface $vnic0 -Cluster $cl -Datastore $ds -password $password -tenant $tenant -enablessh
 
 #Create Groupings
-$TestIpSet = New-NsxIpSet -Name $testIPSetName -Description "Test IP Set" -IpAddresses $testIPs 
-$TestMacSet1 = New-NsxMacSet -Name $testMacSetName1 -Description "Test MAC Set1" -MacAddresses "$TestMac1,$TestMac2" 
-$TestMacSet2 = New-NsxMacSet -Name $testMacSetName2 -Description "Test MAC Set2" -MacAddresses "$TestMac1,$TestMac2" 
+$TestIpSet = New-NsxIpSet -Name $testIPSetName -Description "Test IP Set" -IpAddresses $testIPs
+$TestMacSet1 = New-NsxMacSet -Name $testMacSetName1 -Description "Test MAC Set1" -MacAddresses "$TestMac1,$TestMac2"
+$TestMacSet2 = New-NsxMacSet -Name $testMacSetName2 -Description "Test MAC Set2" -MacAddresses "$TestMac1,$TestMac2"
 
 $TestSG1 = New-NsxSecurityGroup -Name $testSGName1 -Description "Test SG1" -IncludeMember $testVM1, $testVM2
 $TestSG2 = New-NsxSecurityGroup -Name $testSGName2 -Description "Test SG2" -IncludeMember $TestIpSet

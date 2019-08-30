@@ -13,7 +13,7 @@ If not, see https://www.gnu.org/licenses/gpl-2.0.html.
 
 The full text of the General Public License 2.0 is provided in the COPYING file.
 Some files may be comprised of various open source software components, each of which
-has its own license that is located in the source code of the respective component.”
+has its own license that is located in the source code of the respective component."
 #>
 
 ##Spins up a test ESG and exercises all edge cmdlet functionality
@@ -74,7 +74,7 @@ $vnic2 = New-NsxEdgeInterfaceSpec -index 3 -Type trunk -Name "vNic3" -ConnectedT
 New-NsxEdge -Name $name -Interface $vnic0,$vnic1,$vnic2 -Cluster $cl -Datastore $ds -password $password -tenant $tenant -enablessh
 
 
-#Add a vnic 
+#Add a vnic
 Get-NsxEdge $name | Get-NsxEdgeInterface -Index 4 | Set-NsxEdgeInterface -Name "vNic4" -Type internal -ConnectedTo $ls4 -PrimaryAddress $ip4 -SubnetPrefixLength 24
 
 #Add a subint of VLAN and Network Type
@@ -82,7 +82,7 @@ Get-NsxEdge $name | Get-NsxEdgeInterface "vNic3" | New-NsxEdgeSubinterface  -Nam
 Get-NsxEdge $name | Get-NsxEdgeInterface "vNic3" | New-NsxEdgeSubinterface  -Name "sub2" -PrimaryAddress $ip6 -SubnetPrefixLength 24 -TunnelId 2 -Network $ls5
 
 #Get and Remove a subint by name
-Get-NsxEdge $name | Get-NsxEdgeInterface "vNic3" | Get-NsxEdgeSubInterface "sub1" | Remove-NsxEdgeSubinterface -confirm:$false 
+Get-NsxEdge $name | Get-NsxEdgeInterface "vNic3" | Get-NsxEdgeSubInterface "sub1" | Remove-NsxEdgeSubinterface -confirm:$false
 
 #Get and Remove a subint by index
 Get-NsxEdge $name | Get-NsxEdgeInterface "Vnic3" | Get-NsxEdgeSubInterface -Index 11 | Remove-NsxEdgeSubinterface -confirm:$false
@@ -123,7 +123,7 @@ Get-NsxEdge $name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $bgp
 
 #Route redistribution
 ###
-#Create a prefix 
+#Create a prefix
 Get-NsxEdge $Name | Get-NsxEdgeRouting | New-NsxEdgePrefix -Name $PrefixName -Network $PrefixNetwork -confirm:$false
 
 #EnableRouteRedist from static / connected into Ospf
@@ -170,4 +170,3 @@ get-vdportgroup $pg1_name | remove-vdportgroup -confirm:$false
 
 
 
- 

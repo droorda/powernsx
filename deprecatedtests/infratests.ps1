@@ -13,7 +13,7 @@ If not, see https://www.gnu.org/licenses/gpl-2.0.html.
 
 The full text of the General Public License 2.0 is provided in the COPYING file.
 Some files may be comprised of various open source software components, each of which
-has its own license that is located in the source code of the respective component.”
+has its own license that is located in the source code of the respective component."
 #>
 
 
@@ -25,7 +25,7 @@ has its own license that is located in the source code of the respective compone
 #   - Configure VC2 Cluster for VXLAN
 #   - Configure Segment ID pool and Transport Zone
 #
-# This is super tied to my test environment, so its unlikely to be able to be run by others. 
+# This is super tied to my test environment, so its unlikely to be able to be run by others.
 
 
 $mgrIP = "192.168.100.97"
@@ -90,7 +90,7 @@ $mgrVM = New-NSXManager -NsxManagerOVF $ovf `
 write-host "Starting NSX Manager"
 $mgrVm | set-vm -memoryGb 8 -confirm:$false | start-vm | out-null
 
-    
+
 #Need some wait code - simple scrape of API in timeout governed loop
 $startTimer = Get-Date
 write-host "Waiting for NSX Manager API to become available"
@@ -99,17 +99,17 @@ do {
 
     #sleep a while, the VM will take time to start fully..
     start-sleep $NsxManagerWaitStep
-    try { 
+    try {
         $tmpConnect = Connect-NsxServer -server $mgrIp -Username 'admin' -password $Pwd -DisableViAutoConnect -DefaultConnection:$False
         break
     }
-    catch { 
+    catch {
         write-warning "Waiting for NSX Manager API to become available"
     }
 
-    if ( ((get-date) - $startTimer).Seconds -gt $NsxManagerWaitTimeout ) { 
+    if ( ((get-date) - $startTimer).Seconds -gt $NsxManagerWaitTimeout ) {
 
-        #We exceeded the timeout - what does the user want to do? 
+        #We exceeded the timeout - what does the user want to do?
         $message  = "Waited more than $NsxManagerWaitTimeout seconds for NSX Manager API to become available.  Recommend checking boot process, network config etc."
         $question = "Continue waiting for NSX Manager?"
         $decision = $Host.UI.PromptForChoice($message, $question, $yesnochoices, 0)
@@ -120,9 +120,9 @@ do {
         else {
             throw "Failed Deploying Customer NSX Manager appliance"
         }
-    }    
+    }
 
-    
+
 } while ( $true )
 
 write-host "NSX Manager Started successfully"
@@ -151,14 +151,14 @@ $ippool = New-NsxIpPool -Name $ippoolName -Gateway $ippoolgw -SubnetPrefixLength
 
 write-host "Getting VC objects for Controller Deployment"
 $ControllerCluster = Get-Cluster $ControllerClusterName -server $Connection.VIConnection
-$ControllerDatastore = Get-Datastore $ControllerDatastoreName -server $Connection.VIConnection 
+$ControllerDatastore = Get-Datastore $ControllerDatastoreName -server $Connection.VIConnection
 $ControllerPortGroup = Get-VDPortGroup $ControllerPortGroupName -server $Connection.VIConnection
 
-for ( $i=0; $i -le 2; $i++ ) { 
+for ( $i=0; $i -le 2; $i++ ) {
 
     write-host "Deploying NSX Controller $($i+1)"
 
-    try { 
+    try {
         $Controller = New-NsxController -ipPool $ippool -cluster $ControllerCluster `
     -datastore $ControllerDatastore -PortGroup $ControllerPortGroup -password $DefaultNsxControllerPassword -connection $Connection -confirm:$false
 
@@ -169,13 +169,13 @@ for ( $i=0; $i -le 2; $i++ ) {
     }
 
     $Timer = 0
-    while (  (Get-Nsxcontroller -objectId ($controller.id) -connection $Connection).status -ne 'RUNNING' ) { 
+    while (  (Get-Nsxcontroller -objectId ($controller.id) -connection $Connection).status -ne 'RUNNING' ) {
         write-host "Waiting for NSX controller to become available."
         start-sleep $ControllerWaitStep
         $Timer += $ControllerWaitStep
-        if ( $Timer -ge $ControllerWaitTimeout ) { 
-            
-            #We exceeded the timeout - what does the user want to do? 
+        if ( $Timer -ge $ControllerWaitTimeout ) {
+
+            #We exceeded the timeout - what does the user want to do?
             $message  = "Waited more than $ControllerWaitTimeout seconds for controller to become available.  Recommend checking boot process, network config etc."
             $question = "Continue waiting for Controller?"
             $decision = $Host.UI.PromptForChoice($message, $question, $yesnochoices, 0)
@@ -185,9 +185,9 @@ for ( $i=0; $i -le 2; $i++ ) {
             }
             else {
                 throw "Timeout waiting for controller to become available."
-            }  
+            }
         }
-    } 
+    }
 }
 
 write-host "Configuring IP Pool for VTEPs"
@@ -301,7 +301,7 @@ $mgrVM = New-NSXManager -NsxManagerOVF $ovf `
 write-host "Starting NSX Manager"
 $mgrVm | set-vm -memoryGb 8 -confirm:$false | start-vm | out-null
 
-    
+
 #Need some wait code - simple scrape of API in timeout governed loop
 $startTimer = Get-Date
 write-host "Waiting for NSX Manager API to become available"
@@ -310,17 +310,17 @@ do {
 
     #sleep a while, the VM will take time to start fully..
     start-sleep $NsxManagerWaitStep
-    try { 
+    try {
         $tmpConnect = Connect-NsxServer -server $mgrIp -Username 'admin' -password $Pwd -DisableViAutoConnect -DefaultConnection:$False
         break
     }
-    catch { 
+    catch {
         write-warning "Waiting for NSX Manager API to become available"
     }
 
-    if ( ((get-date) - $startTimer).Seconds -gt $NsxManagerWaitTimeout ) { 
+    if ( ((get-date) - $startTimer).Seconds -gt $NsxManagerWaitTimeout ) {
 
-        #We exceeded the timeout - what does the user want to do? 
+        #We exceeded the timeout - what does the user want to do?
         $message  = "Waited more than $NsxManagerWaitTimeout seconds for NSX Manager API to become available.  Recommend checking boot process, network config etc."
         $question = "Continue waiting for NSX Manager?"
         $decision = $Host.UI.PromptForChoice($message, $question, $yesnochoices, 0)
@@ -331,9 +331,9 @@ do {
         else {
             throw "Failed Deploying Customer NSX Manager appliance"
         }
-    }    
+    }
 
-    
+
 } while ( $true )
 
 write-host "NSX Manager Started successfully"
@@ -362,14 +362,14 @@ $ippool = New-NsxIpPool -Name $ippoolName -Gateway $ippoolgw -SubnetPrefixLength
 
 write-host "Getting VC objects for Controller Deployment"
 $ControllerCluster = Get-Cluster $ControllerClusterName -server $Connection.VIConnection
-$ControllerDatastore = Get-Datastore $ControllerDatastoreName -server $Connection.VIConnection 
+$ControllerDatastore = Get-Datastore $ControllerDatastoreName -server $Connection.VIConnection
 $ControllerPortGroup = Get-VDPortGroup $ControllerPortGroupName -server $Connection.VIConnection
 
-for ( $i=0; $i -le 2; $i++ ) { 
+for ( $i=0; $i -le 2; $i++ ) {
 
     write-host "Deploying NSX Controller $($i+1)"
 
-    try { 
+    try {
         $Controller = New-NsxController -ipPool $ippool -cluster $ControllerCluster `
     -datastore $ControllerDatastore -PortGroup $ControllerPortGroup -password $DefaultNsxControllerPassword -connection $Connection -confirm:$false
 
@@ -380,13 +380,13 @@ for ( $i=0; $i -le 2; $i++ ) {
     }
 
     $Timer = 0
-    while (  (Get-Nsxcontroller -objectId ($controller.id) -connection $Connection).status -ne 'RUNNING' ) { 
+    while (  (Get-Nsxcontroller -objectId ($controller.id) -connection $Connection).status -ne 'RUNNING' ) {
         write-host "Waiting for NSX controller to become available."
         start-sleep $ControllerWaitStep
         $Timer += $ControllerWaitStep
-        if ( $Timer -ge $ControllerWaitTimeout ) { 
-            
-            #We exceeded the timeout - what does the user want to do? 
+        if ( $Timer -ge $ControllerWaitTimeout ) {
+
+            #We exceeded the timeout - what does the user want to do?
             $message  = "Waited more than $ControllerWaitTimeout seconds for controller to become available.  Recommend checking boot process, network config etc."
             $question = "Continue waiting for Controller?"
             $decision = $Host.UI.PromptForChoice($message, $question, $yesnochoices, 0)
@@ -396,9 +396,9 @@ for ( $i=0; $i -le 2; $i++ ) {
             }
             else {
                 throw "Timeout waiting for controller to become available."
-            }  
+            }
         }
-    } 
+    }
 }
 
 write-host "Configuring IP Pool for VTEPs"

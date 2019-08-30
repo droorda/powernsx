@@ -13,7 +13,7 @@ If not, see https://www.gnu.org/licenses/gpl-2.0.html.
 
 The full text of the General Public License 2.0 is provided in the COPYING file.
 Some files may be comprised of various open source software components, each of which
-has its own license that is located in the source code of the respective component.”
+has its own license that is located in the source code of the respective component."
 #>
 
 
@@ -47,7 +47,7 @@ New-NsxEdge -Name $name -Interface $vnic0,$vnic1 -Cluster $cl -Datastore $ds -pa
 
 #enable LB
 get-NsxEdge $name | Get-NsxLoadBalancer | Set-NsxLoadBalancer -Enabled -EnableAcceleration
-$monitor = get-NsxEdge $name | Get-NsxLoadBalancer | Get-NsxLoadBalancerMonitor default_http_monitor 
+$monitor = get-NsxEdge $name | Get-NsxLoadBalancer | Get-NsxLoadBalancerMonitor default_http_monitor
 $AppProfile = get-NsxEdge $name | Get-NsxLoadBalancer |New-NsxLoadBalancerApplicationProfile -Name HTTP -Type HTTP -insertXForwardedFor
 
 #Web Pool
@@ -61,7 +61,7 @@ $WebVip = get-NsxEdge $name | Get-NsxLoadBalancer | Add-NsxLoadBalancerVip -Name
 #New Application Rule
 get-NsxEdge $name | Get-NsxLoadBalancer | New-NsxLoadBalancerApplicationRule -name Test -script $script
 
-#Get Application Rule 
+#Get Application Rule
 get-NsxEdge $name | Get-NsxLoadBalancer | Get-NsxLoadBalancerApplicationRule -name Test
 
 
@@ -78,7 +78,7 @@ $WebPool = $WebPool | Add-NsxLoadBalancerPoolMember -Name Web01 -IpAddress 192.1
 $WebPool = $WebPool | Add-NsxLoadBalancerPoolMember -Name Web02 -IpAddress 192.168.200.12 -port 80
 
 #Get stats
-$stats = Get-NsxEdge $name | Get-NsxLoadBalancer | Get-NsxLoadBalancerStats 
+$stats = Get-NsxEdge $name | Get-NsxLoadBalancer | Get-NsxLoadBalancerStats
 
 #Remove Poolmember
 $WebPool = $Webpool | Get-NsxLoadBalancerPoolMember Web01 | remove-nsxLoadbalancerPoolMember -confirm:$false
@@ -106,4 +106,4 @@ get-nsxtransportzone | get-nsxlogicalswitch $ls2_name | remove-nsxlogicalswitch 
 
 
 
- 
+

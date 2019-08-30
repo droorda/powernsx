@@ -13,7 +13,7 @@ If not, see https://www.gnu.org/licenses/gpl-2.0.html.
 
 The full text of the General Public License 2.0 is provided in the COPYING file.
 Some files may be comprised of various open source software components, each of which
-has its own license that is located in the source code of the respective component.”
+has its own license that is located in the source code of the respective component."
 #>
 
 #Exercises all security tag cmdlets functionality
@@ -68,7 +68,7 @@ write-host "`nSecurity Tags before"
 $vm2 | Get-NsxSecurityTagAssignment | select { $_.SecurityTag.name} , VirtualMachine
 
 write-host "`nSecurity Tags Added"
-$vm2 | New-NsxSecurityTagAssignment -ApplyTag -SecurityTag $TestST2 
+$vm2 | New-NsxSecurityTagAssignment -ApplyTag -SecurityTag $TestST2
 $vm2 | Get-NsxSecurityTagAssignment | select { $_.SecurityTag.name} , VirtualMachine
 
 write-host "`nSecurity Tags Removed"
@@ -140,7 +140,7 @@ write-host "`nSecurity Tags before"
 $vm1,$vm2  | Get-NsxSecurityTagAssignment | select { $_.SecurityTag.name} , VirtualMachine
 
 write-host "`nSecurity Tags Added"
-Get-NsxSecurityTag $testSTName2  | New-NsxSecurityTagAssignment -ApplyToVm -VirtualMachine $vm1,$vm2 
+Get-NsxSecurityTag $testSTName2  | New-NsxSecurityTagAssignment -ApplyToVm -VirtualMachine $vm1,$vm2
 $vm1,$vm2 | Get-NsxSecurityTagAssignment | select { $_.SecurityTag.name} , VirtualMachine
 
 write-host "`nSecurity Tags Removed"
