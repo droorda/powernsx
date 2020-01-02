@@ -21,7 +21,7 @@ requirements for maintaining manifests now.
 
 Maintainers are the only ones that should edit this script.
 
-Copyright © 2015 VMware, Inc. All Rights Reserved.
+Copyright  2015 VMware, Inc. All Rights Reserved.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 2, as published by the Free Software Foundation.

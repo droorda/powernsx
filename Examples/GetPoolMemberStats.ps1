@@ -3,7 +3,7 @@
 #nbradford@vmware.com
 
 <#
-Copyright © 2015 VMware, Inc. All Rights Reserved.
+Copyright  2015 VMware, Inc. All Rights Reserved.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License version 2, as published by the Free Software Foundation.
@@ -42,11 +42,11 @@ If ( -not $DefaultNsxConnection ) {
 
 $stats = Get-NsxEdge | Get-NsxLoadBalancer | Get-NsxLoadBalancerStats
 
-foreach ( $pool in $stats.pool) { 
+foreach ( $pool in $stats.pool) {
 
     $members = $pool.member
-    foreach ($member in $members ) { 
-        [pscustomobject]@{ 
+    foreach ($member in $members ) {
+        [pscustomobject]@{
             "PoolName" = $pool.name
             "PoolStatus" = $pool.Status
             "MemberName" = $member.name
@@ -54,7 +54,7 @@ foreach ( $pool in $stats.pool) {
             "MemberFailureCause" = $member.FailureCause
             "MemberLastStateChangeTime" = $member.lastStateChangeTime
             "MemberIp" = $member.ipAddress
-        }            
+        }
     }
 }
 
