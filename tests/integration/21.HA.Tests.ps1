@@ -22,7 +22,7 @@ If ( -not $PNSXTestVC ) {
     Throw "Tests must be invoked via Start-Test function from the Test module.  Import the Test module and run Start-Test"
 }
 
-Describe "Logical Thingy" {
+Describe "Edge HA" {
 
     BeforeAll {
 
@@ -40,38 +40,42 @@ Describe "Logical Thingy" {
         #Put any script scope variables you need to reference in your tests.
         #For naming items that will be created in NSX, use a unique prefix
         #pester_<testabbreviation>_<objecttype><uid>.  example:
-        $script:mynsxthing = "pester_lt_thing1"
+        $script:haedge1name = "pester-ha-edge1"
+        $script:haedge1ipuplink = "1.1.1.1"
+        $script:password = "VMware1!VMware1!"
+        $script:hauplinklsname = "pester_ha_uplink_ls"
+        $script:hainternallsname = "pester_ha_internal_ls"
+
+        #Create Logical Switch
+        $script:hauplinkls = Get-NsxTransportZone -LocalOnly | Select-Object -first 1 | New-NsxLogicalSwitch $hauplinklsname
+        $script:hainternalls = Get-NsxTransportZone -LocalOnly | Select-Object -first 1 | New-NsxLogicalSwitch $hainternallsname
+
+        #Create Edge Interface
+        $vnic0 = New-NsxEdgeInterfaceSpec -index 0 -Type uplink -Name "vNic0" -ConnectedTo $hauplinkls -PrimaryAddress $haedge1ipuplink -SubnetPrefixLength 24
+
+        #Create Edge
+        $script:haEdge = New-NsxEdge -Name $haedge1name -Interface $vnic0 -Cluster $cl -Datastore $ds -password $password -enablessh -hostname $haedge1name -EnableHA -HaDeadTime 6
+
     }
 
-    Context "Something interesting" {
-
-        #Group related tests together.
-
-        it "Can do something" {
-
-            #do something and then make an assertion about what it should be
-            $thing = new-nsxthingy $mynsxthing
-
-            #remember to get from api rather than use returned val - this test successful creation, not just return
-            get-nsxthingy $mynsxthing | should not be $null
-
-            #can make multiple assertions to improve test value.
-            $thing.ears | should be pointy
+    Context "Check Edge HA" {
+        it "Get custom Edge HA Timer setting" {
+            $ha = get-nsxedge $haedge1name
+            $ha.features.highAvailability.enabled | should be "true"
+            $ha.features.highAvailability.declareDeadTime | should be 6
         }
-
-        it "Can do something else" {
-            ...
-        }
-    }
-
-    Context "Something else interesting" {
-        ...
     }
 
     AfterAll {
         #AfterAll block runs _once_ at completion of invocation regardless of number of tests/contexts/describes.
         #Clean up anything you create in here.  Be forceful - you want to leave the test env as you found it as much as is possible.
         #We kill the connection to NSX Manager here.
+
+        get-nsxedge $haedge1name | remove-nsxedge -confirm:$false
+        start-sleep 5
+
+        Get-NsxLogicalSwitch $hauplinklsname | Remove-NsxLogicalSwitch -Confirm:$false
+        Get-NsxLogicalSwitch $hainternallsname | Remove-NsxLogicalSwitch -Confirm:$false
 
         disconnect-nsxserver
     }

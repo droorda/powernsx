@@ -7,8 +7,6 @@ If ( -not $PNSXTestVC ) {
 Describe "DFW" {
 
 
-    $brokenSpecificAppliedTo = $true
-
     BeforeAll {
 
         #BeforeAll block runs _once_ at invocation regardless of number of tests/contexts/describes.
@@ -18,11 +16,11 @@ Describe "DFW" {
         write-host -ForegroundColor Green "Performing setup tasks for DFW tests"
         import-module $pnsxmodule
         $script:DefaultNsxConnection = Connect-NsxServer -vCenterServer $PNSXTestVC -NsxServerHint $PNSXTestNSX -Credential $PNSXTestDefViCred -ViWarningAction "Ignore"
-        $script:cl = get-cluster | select -first 1
+        $script:cl = get-cluster | Select-Object -first 1
         write-warning "Using cluster $cl for edge appliance deployment"
-        $script:ds = $cl |  get-datastore | select -first 1
+        $script:ds = $cl |  get-datastore | Select-Object -first 1
         write-warning "Using datastore $ds for edge appliance deployment"
-        $script:dc = Get-Datacenter | select -first 1
+        $script:dc = Get-Datacenter | Select-Object -first 1
         write-warning "Using Datacenter $dc for object identifier"
 
         #Put any script scope variables you need to reference in your tests.
@@ -74,14 +72,14 @@ Describe "DFW" {
 
 
         #Logical Switch
-        $script:testls = Get-NsxTransportZone -LocalOnly | select -first 1 | New-NsxLogicalSwitch $testlsname
+        $script:testls = Get-NsxTransportZone -LocalOnly | Select-Object -first 1 | New-NsxLogicalSwitch $testlsname
 
         #Create Edge
 
         $vnic0 = New-NsxEdgeInterfaceSpec -index 1 -Type uplink -Name "vNic1" -ConnectedTo $testls -PrimaryAddress $dfwedgeIp1 -SubnetPrefixLength 24
         $script:dfwEdge = New-NsxEdge -Name $dfwedgename -Interface $vnic0 -Cluster $cl -Datastore $ds -password $password -tenant $tenant -enablessh -hostname "pester-dfw-edge1"
         #VMs
-        $vmhost = $cl | get-vmhost | select -first 1
+        $vmhost = $cl | get-vmhost | Select-Object -first 1
         $folder = get-folder -type VM -name vm
         $vmsplat = @{
             "VMHost" = $vmhost
@@ -110,11 +108,11 @@ Describe "DFW" {
         $script:TestService1 = New-NsxService -Name $TestServiceName1 -Protocol $TestServiceProto -port $testPort
         $script:TestService2 = New-NsxService -Name $TestServiceName2 -Protocol $TestServiceProto -port "$testPort,$testPortRange,$testPortSet"
 
-        $script:TestDvPortgroup = Get-VDSwitch | select -first 1 | New-VDPortgroup -name $testdvportgroupname
+        $script:TestDvPortgroup = Get-VDSwitch | Select-Object -first 1 | New-VDPortgroup -name $testdvportgroupname
 
         #Create Resource pool
 
-        $script:testresourcepool = Get-ResourcePool | select -first 1 | New-ResourcePool -name $testRpname -CpuExpandableReservation $true -CpuReservationMhz 0 -CpuSharesLevel low
+        $script:testresourcepool = Get-ResourcePool | Select-Object -first 1 | New-ResourcePool -name $testRpname -CpuExpandableReservation $true -CpuReservationMhz 0 -CpuSharesLevel low
 
         # Create vapp
 
@@ -129,9 +127,9 @@ Describe "DFW" {
         #AfterAll block runs _once_ at completion of invocation regardless of number of tests/contexts/describes.
         #We kill the connection to NSX Manager here.
         write-host -ForegroundColor Green "Performing cleanup tasks for DFW tests"
-        get-vm $testVMName1 -ErrorAction Ignore | remove-vm -Confirm:$false
-        get-vm $testVMName2 -ErrorAction Ignore | remove-vm -Confirm:$false
-        get-vm $testVMName3 -ErrorAction Ignore | remove-vm -Confirm:$false
+        get-vm $testVMName1 -ErrorAction Ignore | remove-vm -Confirm:$false -DeletePermanently
+        get-vm $testVMName2 -ErrorAction Ignore | remove-vm -Confirm:$false -DeletePermanently
+        get-vm $testVMName3 -ErrorAction Ignore | remove-vm -Confirm:$false -DeletePermanently
         get-nsxedge $dfwedgename | remove-nsxedge -confirm:$false
         start-sleep 5
 
@@ -163,13 +161,13 @@ Describe "DFW" {
 
     Context "Firewall Drafts" {
         AfterAll {
-            Get-NsxFirewallSavedConfiguration | ? {$_.name -match "^pester"} | Remove-NsxFirewallSavedConfiguration -confirm:$false
+            Get-NsxFirewallSavedConfiguration | Where-Object {$_.name -match "^pester"} | Remove-NsxFirewallSavedConfiguration -confirm:$false
         }
 
         BeforeEach {
             $section = New-NsxFirewallSection "pester_drafts"
             sleep 1
-            $rule1 = $section | New-NsxFirewallRule -Name "pester_draft_rule" -Action allow
+            $section | New-NsxFirewallRule -Name "pester_draft_rule" -Action allow
             sleep 1
         }
 
@@ -181,7 +179,7 @@ Describe "DFW" {
         it "Can retrieve all firewall drafts" {
             $drafts = Get-NsxFirewallSavedConfiguration
             $drafts | should not be $null
-            ($drafts | measure).count | should begreaterthan 0
+            ($drafts | Measure-Object).count | should begreaterthan 0
             $draft = $drafts | select-object -first 1
             $draft.id | should not be $null
             ($draft | Get-Member -Name description -MemberType Properties).count | should be 1
@@ -194,9 +192,9 @@ Describe "DFW" {
         it "Can retrieve firewall drafts by name (positional)" {
             # NSX Manager allows firewall drafts are able to be configured with
             # the same name
-            $drafts = Get-NsxFirewallSavedConfiguration | select -first 1
+            $drafts = Get-NsxFirewallSavedConfiguration | Select-Object -first 1
             $drafts | should not be $null
-            ($drafts | measure).count | should be 1
+            ($drafts | Measure-Object).count | should be 1
 
             $draft = Get-NsxFirewallSavedConfiguration $drafts.name
             $draft.id | should be $drafts.id
@@ -217,9 +215,9 @@ Describe "DFW" {
         it "Can retrieve firewall drafts by name (parameter)" {
             # NSX Manager allows firewall drafts are able to be configured with
             # the same name
-            $drafts = Get-NsxFirewallSavedConfiguration | select -first 1
+            $drafts = Get-NsxFirewallSavedConfiguration | Select-Object -first 1
             $drafts | should not be $null
-            ($drafts | measure).count | should be 1
+            ($drafts | Measure-Object).count | should be 1
 
             $draft = Get-NsxFirewallSavedConfiguration -Name $drafts.name
             $draft.id | should be $drafts.id
@@ -238,9 +236,9 @@ Describe "DFW" {
         }
 
         it "Can retrieve firewall drafts by id" {
-            $drafts = Get-NsxFirewallSavedConfiguration | select -first 1
+            $drafts = Get-NsxFirewallSavedConfiguration | Select-Object -first 1
             $drafts | should not be $null
-            ($drafts | measure).count | should be 1
+            ($drafts | Measure-Object).count | should be 1
 
             $draft = Get-NsxFirewallSavedConfiguration -ObjectId $drafts.id
             $draft.id | should be $drafts.id
@@ -332,11 +330,11 @@ Describe "DFW" {
         }
 
         it "Can remove a firewall draft" {
-            $draft = New-NsxFirewallSavedConfiguration -Name "pester_draft_delete" | Select -first 1
+            $draft = New-NsxFirewallSavedConfiguration -Name "pester_draft_delete" | Select-Object -first 1
             $draft | should not be $null
-            ($draft | measure).count | should be 1
+            ($draft | Measure-Object).count | should be 1
             Get-NsxFirewallSavedConfiguration -ObjectId $draft.id | Remove-NsxFirewallSavedConfiguration -confirm:$false
-            $deleted = Get-NsxFirewallSavedConfiguration | ? { ($_.name -eq $draft.name) -AND ($_.id -eq $draft.id) }
+            $deleted = Get-NsxFirewallSavedConfiguration | Where-Object { ($_.name -eq $draft.name) -AND ($_.id -eq $draft.id) }
             $deleted | should be $null
         }
 
@@ -345,7 +343,7 @@ Describe "DFW" {
     Context "L3 Sections" {
 
         AfterAll {
-            get-nsxfirewallsection | ? {$_.name -match "^pester" } | remove-nsxfirewallsection -Confirm:$false -force:$true
+            get-nsxfirewallsection | Where-Object {$_.name -match "^pester" } | remove-nsxfirewallsection -Confirm:$false -force:$true
         }
 
         it "Can create an L3 section" {
@@ -399,7 +397,7 @@ Describe "DFW" {
         }
 
         it "Can create an L3 section at bottom (insert_before_default)" {
-            $sectionTop = New-NsxFirewallSection "pester_dfw_top"
+            New-NsxFirewallSection "pester_dfw_top"
             $section = New-NsxFirewallSection $l3sectionname -position bottom
             $section | should not be $null
             $section = Get-NsxFirewallSection
@@ -407,9 +405,9 @@ Describe "DFW" {
         }
 
         it "Can insert an L3 section before a given section" {
-            $section3 = New-NsxFirewallSection "pester_dfw_3"
+            New-NsxFirewallSection "pester_dfw_3"
             $section2 = New-NsxFirewallSection "pester_dfw_2"
-            $section1 = New-NsxFirewallSection "pester_dfw_1"
+            New-NsxFirewallSection "pester_dfw_1"
             $section = New-NsxFirewallSection $l3sectionname -position before -anchorId $section2.id
             $section | should not be $null
             $section = Get-NsxFirewallSection
@@ -417,9 +415,9 @@ Describe "DFW" {
         }
 
         it "Can insert an L3 section after a given section" {
-            $section3 = New-NsxFirewallSection "pester_dfw_3"
+            New-NsxFirewallSection "pester_dfw_3"
             $section2 = New-NsxFirewallSection "pester_dfw_2"
-            $section1 = New-NsxFirewallSection "pester_dfw_1"
+            New-NsxFirewallSection "pester_dfw_1"
             $section = New-NsxFirewallSection $l3sectionname -position after -anchorId $section2.id
             $section | should not be $null
             $section = Get-NsxFirewallSection
@@ -442,7 +440,7 @@ Describe "DFW" {
     Context "L2 Sections" {
 
         AfterAll {
-            get-nsxfirewallsection -sectionType layer2sections | ? {$_.name -match "^pester" } | remove-nsxfirewallsection -Confirm:$false -force:$true
+            get-nsxfirewallsection -sectionType layer2sections | Where-Object {$_.name -match "^pester" } | remove-nsxfirewallsection -Confirm:$false -force:$true
         }
 
         it "Can create an L2 section" {
@@ -496,7 +494,7 @@ Describe "DFW" {
         }
 
         it "Can create an L2 section at bottom (insert_before_default)" {
-            $sectionTop = New-NsxFirewallSection "pester_dfw_top" -sectionType layer2sections
+            New-NsxFirewallSection "pester_dfw_top" -sectionType layer2sections
             $section = New-NsxFirewallSection $l2sectionname -position bottom -sectionType layer2sections
             $section | should not be $null
             $section = Get-NsxFirewallSection -sectionType layer2sections
@@ -504,9 +502,9 @@ Describe "DFW" {
         }
 
         it "Can insert an L3 section before a given section" {
-            $section3 = New-NsxFirewallSection "pester_dfw_3" -sectionType layer2sections
+            New-NsxFirewallSection "pester_dfw_3" -sectionType layer2sections
             $section2 = New-NsxFirewallSection "pester_dfw_2" -sectionType layer2sections
-            $section1 = New-NsxFirewallSection "pester_dfw_1" -sectionType layer2sections
+            New-NsxFirewallSection "pester_dfw_1" -sectionType layer2sections
             $section = New-NsxFirewallSection $l2sectionname -position before -anchorId $section2.id -sectionType layer2sections
             $section | should not be $null
             $section = Get-NsxFirewallSection -sectionType layer2sections
@@ -514,9 +512,9 @@ Describe "DFW" {
         }
 
         it "Can insert an L3 section after a given section" {
-            $section3 = New-NsxFirewallSection "pester_dfw_3" -sectionType layer2sections
+            New-NsxFirewallSection "pester_dfw_3" -sectionType layer2sections
             $section2 = New-NsxFirewallSection "pester_dfw_2" -sectionType layer2sections
-            $section1 = New-NsxFirewallSection "pester_dfw_1" -sectionType layer2sections
+            New-NsxFirewallSection "pester_dfw_1" -sectionType layer2sections
             $section = New-NsxFirewallSection $l2sectionname -position after -anchorId $section2.id -sectionType layer2sections
             $section | should not be $null
             $section = Get-NsxFirewallSection -sectionType layer2sections
@@ -1199,7 +1197,6 @@ Describe "DFW" {
             $rule.sources | should be $null
             $rule.destination | should be $null
             $rule.appliedToList.appliedTo.Name | should be $testdvportgroupname
-            $rpid = $testdvPortgroup.id -replace "Resourcepool-",""
             #$rule.appliedToList.appliedTo.Value | should not be $null
             $rule.appliedToList.appliedTo.Type | should be "DistributedVirtualPortgroup"
             #$rule.appliedToList.appliedTo.isValue | should not be $null
@@ -1945,12 +1942,17 @@ Describe "DFW" {
             $rule.action | should be deny
             $rule.disabled | should be "false"
             $rule.logged | should be "true"
-            $rule = Get-NsxFirewallSection -Name $l3sectionname | Get-NsxFirewallRule -Name "pester_dfw_rule1" | Set-NsxFirewallRule -name "modified_pester_dfw_rule1" -action allow -disabled:$true -logged:$false
+            #There is no comment before, it will be add
+            $rule = Get-NsxFirewallSection -Name $l3sectionname | Get-NsxFirewallRule -Name "pester_dfw_rule1" | Set-NsxFirewallRule -name "modified_pester_dfw_rule1" -action allow -disabled:$true -logged:$false -comment "My Comment"
             $rule | should not be $null
             $rule.name | should be "modified_pester_dfw_rule1"
             $rule.action | should be allow
             $rule.disabled | should be "true"
             $rule.logged | should be "false"
+            $rule.notes | should be "My Comment"
+            #There is already a comment, it will be replaced
+            $rule = Get-NsxFirewallSection -Name $l3sectionname | Get-NsxFirewallRule -Name "modified_pester_dfw_rule1" | Set-NsxFirewallRule -comment "My Comment 2"
+            $rule.notes | should be "My Comment 2"
         }
 
         BeforeEach {
@@ -1985,97 +1987,97 @@ Describe "DFW" {
 
         it "Can get a specific source member of an existing L3 rule by string" {
             $member = $l3modrule1 | Get-NsxFirewallRuleMember -MemberType Source -Member $script:testVMName1
-            ($member | ? { $_.ruleid -eq $l3modrule1.id} | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.MemberType -eq 'Source' } | measure).count | should be 1
-            ($member | ? { $_.MemberType -eq 'Destination' } | measure).count | should be 0
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id} | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.MemberType -eq 'Source' } | Measure-Object).count | should be 1
+            ($member | Where-Object { $_.MemberType -eq 'Destination' } | Measure-Object).count | should be 0
             $member.Name  |should be $script:testVMName1
             $member.RuleId | should be $l3modrule1.id
         }
 
         it "Can get a specific destination member of an existing L3 rule by string" {
             $member = $l3modrule1 | Get-NsxFirewallRuleMember -MemberType Destination -Member $script:testVMName1
-            ($member | ? { $_.ruleid -eq $l3modrule1.id} | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.MemberType -eq 'Source' } | measure).count | should be 0
-            ($member | ? { $_.MemberType -eq 'Destination' } | measure).count | should be 1
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id} | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.MemberType -eq 'Source' } | Measure-Object).count | should be 0
+            ($member | Where-Object { $_.MemberType -eq 'Destination' } | Measure-Object).count | should be 1
             $member.Name  |should be $script:testVMName1
             $member.RuleId | should be $l3modrule1.id
         }
 
         it "Can get a specific member in both source and destination of an existing L3 rule by string" {
             $member = $l3modrule1 | Get-NsxFirewallRuleMember -Member $script:testVMName1
-            ($member | ? { $_.ruleid -eq $l3modrule1.id | measure}).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.MemberType -eq 'Source' } | measure).count | should be 1
-            ($member | ? { $_.MemberType -eq 'Destination' } | measure).count | should be 1
-            ($member | ? { $_.MemberType -eq 'Source' } ).Name  | should be $script:testVMName1
-            ($member | ? { $_.MemberType -eq 'Destination' } ).Name  | should be $script:testVMName1
-            ($member | ? { $_.MemberType -eq 'Source' }).ruleid | should be $l3modrule1.id
-            ($member | ? { $_.MemberType -eq 'Destination' }).RuleId | should be $l3modrule1.id        }
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id | Measure-Object}).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.MemberType -eq 'Source' } | Measure-Object).count | should be 1
+            ($member | Where-Object { $_.MemberType -eq 'Destination' } | Measure-Object).count | should be 1
+            ($member | Where-Object { $_.MemberType -eq 'Source' } ).Name  | should be $script:testVMName1
+            ($member | Where-Object { $_.MemberType -eq 'Destination' } ).Name  | should be $script:testVMName1
+            ($member | Where-Object { $_.MemberType -eq 'Source' }).ruleid | should be $l3modrule1.id
+            ($member | Where-Object { $_.MemberType -eq 'Destination' }).RuleId | should be $l3modrule1.id        }
 
         it "Can get a specific source member of an existing L3 rule by object" {
             $member = $l3modrule1 | Get-NsxFirewallRuleMember -MemberType Source -Member $script:testvm1
-            ($member | ? { $_.ruleid -eq $l3modrule1.id}  | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.MemberType -eq 'Source' } | measure).count | should be 1
-            ($member | ? { $_.MemberType -eq 'Destination' } | measure).count | should be 0
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id}  | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.MemberType -eq 'Source' } | Measure-Object).count | should be 1
+            ($member | Where-Object { $_.MemberType -eq 'Destination' } | Measure-Object).count | should be 0
             $member.Name  |should be $script:testVMName1
             $member.RuleId | should be $l3modrule1.id
         }
 
         it "Can get a specific destination member of an existing L3 rule by object" {
             $member = $l3modrule1 | Get-NsxFirewallRuleMember -MemberType Destination -Member $script:testVM1
-            ($member | ? { $_.ruleid -eq $l3modrule1.id}  | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.MemberType -eq 'Source' } | measure).count | should be 0
-            ($member | ? { $_.MemberType -eq 'Destination' } | measure).count | should be 1
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id}  | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.MemberType -eq 'Source' } | Measure-Object).count | should be 0
+            ($member | Where-Object { $_.MemberType -eq 'Destination' } | Measure-Object).count | should be 1
             $member.Name  |should be $script:testVMName1
             $member.RuleId | should be $l3modrule1.id
         }
 
         it "Can get a specific member in both source and destination of an existing L3 rule by object" {
             $member = $l3modrule1 | Get-NsxFirewallRuleMember -Member $script:testVM1
-            ($member | ? { $_.ruleid -eq $l3modrule1.id}  | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.MemberType -eq 'Source' } | measure).count | should be 1
-            ($member | ? { $_.MemberType -eq 'Destination' } | measure).count | should be 1
-            ($member | ? { $_.MemberType -eq 'Source' } ).Name  | should be $script:testVMName1
-            ($member | ? { $_.MemberType -eq 'Destination' } ).Name  | should be $script:testVMName1
-            ($member | ? { $_.MemberType -eq 'Source' }).RuleId | should be $l3modrule1.id
-            ($member | ? { $_.MemberType -eq 'Destination' }).RuleId | should be $l3modrule1.id
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id}  | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.MemberType -eq 'Source' } | Measure-Object).count | should be 1
+            ($member | Where-Object { $_.MemberType -eq 'Destination' } | Measure-Object).count | should be 1
+            ($member | Where-Object { $_.MemberType -eq 'Source' } ).Name  | should be $script:testVMName1
+            ($member | Where-Object { $_.MemberType -eq 'Destination' } ).Name  | should be $script:testVMName1
+            ($member | Where-Object { $_.MemberType -eq 'Source' }).RuleId | should be $l3modrule1.id
+            ($member | Where-Object { $_.MemberType -eq 'Destination' }).RuleId | should be $l3modrule1.id
         }
 
         it "Can get all sources from an existing L3 rule" {
             $member = $l3modrule1 | Get-NsxFirewallRuleMember -MemberType Source
-            ($member | ? { $_.ruleid -eq $l3modrule1.id} | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.MemberType -eq 'Destination'} | measure).count | should be 0
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id} | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.MemberType -eq 'Destination'} | Measure-Object).count | should be 0
             $member.count -eq @($l3modrule1.Sources.Source).count | should be $true
         }
 
         it "Can get all destinations from an existing L3 rule" {
             $member = $l3modrule1 | Get-NsxFirewallRuleMember -MemberType Destination
-            ($member | ? { $_.ruleid -eq $l3modrule1.id} | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.MemberType -eq 'Source'} | measure).count | should be 0
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id} | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.MemberType -eq 'Source'} | Measure-Object).count | should be 0
             $member.count -eq @($l3modrule1.Destinations.Destination).count | should be $true
         }
 
         it "Can get all members (source/destination) from an existing L3 rule" {
             $member = $l3modrule1 | Get-NsxFirewallRuleMember
-            ($member | ? { $_.ruleid -eq $l3modrule1.id} | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id} | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
             $member.count -eq (@($l3modrule1.Sources.Source).count + @($l3modrule1.Destinations.Destination).count) | should be $true
         }
 
         it "Can add a new source to an existing L3 rule" {
 
             $member = Get-NsxFirewallRule -ruleid $l3modrule1.id | Add-NsxFirewallRuleMember -MemberType Source -Member $script:TestVM2
-            ($member | ? { $_.ruleid -eq $l3modrule1.id} | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.membertype -eq 'Source' } | measure).count -eq (@($l3modrule1.Sources.Source).count + 1) | should be $true
-            ($member | ? { $_.membertype -eq 'Destination' } | measure).count -eq (@($l3modrule1.Destinations.Destination).count) | should be $true
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id} | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.membertype -eq 'Source' } | Measure-Object).count -eq (@($l3modrule1.Sources.Source).count + 1) | should be $true
+            ($member | Where-Object { $_.membertype -eq 'Destination' } | Measure-Object).count -eq (@($l3modrule1.Destinations.Destination).count) | should be $true
             $rule = Get-NsxFirewallRule -Ruleid $l3modrule1.id
             $rule.Sources.Source.Name -contains $script:TestVMName2 | should be $true
         }
@@ -2083,20 +2085,20 @@ Describe "DFW" {
         it "Can add a new destination to an existing L3 rule" {
 
             $member = Get-NsxFirewallRule -ruleid $l3modrule1.id | Add-NsxFirewallRuleMember -MemberType Destination -Member $script:TestVM2
-            ($member | ? { $_.ruleid -eq $l3modrule1.id} | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.membertype -eq 'Source' } | measure).count -eq (@($l3modrule1.Sources.Source).count) | should be $true
-            ($member | ? { $_.membertype -eq 'Destination' } | measure).count -eq (@($l3modrule1.Destinations.Destination).count + 1) | should be $true
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id} | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.membertype -eq 'Source' } | Measure-Object).count -eq (@($l3modrule1.Sources.Source).count) | should be $true
+            ($member | Where-Object { $_.membertype -eq 'Destination' } | Measure-Object).count -eq (@($l3modrule1.Destinations.Destination).count + 1) | should be $true
             $rule = Get-NsxFirewallRule -Ruleid $l3modrule1.id
             $rule.Destinations.Destination.Name -contains $script:TestVMName2 | should be $true
         }
 
         it "Can add multiple sources to an existing L3 rule" {
             $member = Get-NsxFirewallRule -ruleid $l3modrule1.id | Add-NsxFirewallRuleMember -MemberType Source -Member $script:TestVM2, $script:TestSG2
-            ($member | ? { $_.ruleid -eq $l3modrule1.id} | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.membertype -eq 'Source' } | measure).count -eq (@($l3modrule1.Sources.Source).count + 2) | should be $true
-            ($member | ? { $_.membertype -eq 'Destination' } | measure).count -eq (@($l3modrule1.Destinations.Destination).count) | should be $true
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id} | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.membertype -eq 'Source' } | Measure-Object).count -eq (@($l3modrule1.Sources.Source).count + 2) | should be $true
+            ($member | Where-Object { $_.membertype -eq 'Destination' } | Measure-Object).count -eq (@($l3modrule1.Destinations.Destination).count) | should be $true
             $rule = Get-NsxFirewallRule -Ruleid $l3modrule1.id
             $rule.Sources.Source.Name -contains $script:TestVMName2 | should be $true
             $rule.Sources.Source.Name -contains $script:TestSgName2 | should be $true
@@ -2104,10 +2106,10 @@ Describe "DFW" {
 
         it "Can add multiple destinations to an existing L3 rule" {
             $member = Get-NsxFirewallRule -ruleid $l3modrule1.id | Add-NsxFirewallRuleMember -MemberType Destination -Member $script:TestVM2, $script:TestSG2
-            ($member | ? { $_.ruleid -eq $l3modrule1.id} | measure).count | should begreaterthan 0
-            $member | ? { $_.ruleid -ne $l3modrule1.id} | should be $null
-            ($member | ? { $_.membertype -eq 'Destination' } | measure).count -eq (@($l3modrule1.Destinations.Destination).count + 2) | should be $true
-            ($member | ? { $_.membertype -eq 'Source' } | measure).count -eq (@($l3modrule1.Sources.Source).count) | should be $true
+            ($member | Where-Object { $_.ruleid -eq $l3modrule1.id} | Measure-Object).count | should begreaterthan 0
+            $member | Where-Object { $_.ruleid -ne $l3modrule1.id} | should be $null
+            ($member | Where-Object { $_.membertype -eq 'Destination' } | Measure-Object).count -eq (@($l3modrule1.Destinations.Destination).count + 2) | should be $true
+            ($member | Where-Object { $_.membertype -eq 'Source' } | Measure-Object).count -eq (@($l3modrule1.Sources.Source).count) | should be $true
             $rule = Get-NsxFirewallRule -Ruleid $l3modrule1.id
             $rule.Destinations.Destination.Name -contains $script:TestVMName2 | should be $true
             $rule.Destinations.Destination.Name -contains $script:TestSgName2 | should be $true
@@ -2146,13 +2148,13 @@ Describe "DFW" {
         }
 
         it "Can remove all destinations from an existing L3 rule" {
-            $member = Get-NsxFirewallRule -ruleid $l3modrule1.id | Get-NsxFirewallRuleMember -MemberType Destination | Remove-NsxFirewallRuleMember -confirm:$false -SayHello2Heaven
+            Get-NsxFirewallRule -ruleid $l3modrule1.id | Get-NsxFirewallRuleMember -MemberType Destination | Remove-NsxFirewallRuleMember -confirm:$false -SayHello2Heaven
             $rule = Get-NsxFirewallRule -Ruleid $l3modrule1.id
             ($rule.Destinations.Destination.Name).count | should be 0
         }
 
         it "Can remove all members (source/destination) from an existing L3 rule" {
-            $member = Get-NsxFirewallRule -ruleid $l3modrule1.id | Get-NsxFirewallRuleMember | Remove-NsxFirewallRuleMember -confirm:$false -SayHello2Heaven
+            Get-NsxFirewallRule -ruleid $l3modrule1.id | Get-NsxFirewallRuleMember | Remove-NsxFirewallRuleMember -confirm:$false -SayHello2Heaven
             $rule = Get-NsxFirewallRule -Ruleid $l3modrule1.id
             ($rule.Sources.Source.Name).count | should be 0
             ($rule.Destinations.Destination.Name).count | should be 0

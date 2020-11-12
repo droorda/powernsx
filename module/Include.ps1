@@ -62,6 +62,7 @@ $FunctionsToExport = @(
     'Get-NsxLogicalSwitch',
     'New-NsxLogicalSwitch',
     'Remove-NsxLogicalSwitch',
+    'Set-NsxLogicalSwitch',
     'Get-NsxSpoofguardPolicy',
     'New-NsxSpoofguardPolicy',
     'Remove-NsxSpoofguardPolicy',
@@ -95,6 +96,7 @@ $FunctionsToExport = @(
     'Repair-NsxEdge',
     'Set-NsxEdge',
     'Remove-NsxEdge',
+    'Get-NsxEdgeStatus',
     'Enable-NsxEdgeSsh',
     'Disable-NsxEdgeSsh',
     'Set-NsxEdgeNat',
@@ -116,6 +118,7 @@ $FunctionsToExport = @(
     'Remove-NsxEdgeCertificate',
     'Get-NsxSslVpn',
     'Set-NsxSslVpn',
+    'Remove-NsxSslVpn',
     'New-NsxSslVpnAuthServer',
     'Get-NsxSslVpnAuthServer',
     'New-NsxSslVpnUser',
@@ -224,6 +227,7 @@ $FunctionsToExport = @(
     'New-NsxLoadBalancerPool',
     'Get-NsxLoadBalancerPool',
     'Remove-NsxLoadBalancerPool',
+    'Set-NsxLoadBalancerPool',
     'Get-NsxLoadBalancerPoolMember',
     'Set-NsxLoadBalancerPoolMember',
     'Add-NsxLoadBalancerPoolMember',
@@ -324,7 +328,15 @@ $FunctionsToExport = @(
     'New-NsxLogicalRouterBridge',
     'Get-NsxLogicalRouterBridge',
     'Remove-NsxLogicalRouterBridge',
-    'Remove-NsxEdgeCsr'
+    'Remove-NsxEdgeCsr',
+    'Get-NsxIPsecStats',
+    'Get-NsxDns',
+    'Set-NsxDns',
+    'Remove-NsxDns',
+    'Get-NsxIPsec',
+    'Set-NsxIPsec',
+    'Remove-NsxIPsec',
+    'Add-NsxIPsecSite'
 )
 
 #Manifest settings that are common to all platforms.

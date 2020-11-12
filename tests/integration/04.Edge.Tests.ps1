@@ -89,6 +89,37 @@ Describe "Edge" {
         disconnect-nsxserver
     }
 
+    Context "Edge Status" {
+
+        BeforeAll{
+            if ( -not ( Get-NsxEdge $name ) ) {
+                New-NsxEdge -Name $name -Interface $vnics[0],$vnics[1],$vnics[2] -Cluster $cl -Datastore $ds -password $password -tenant $tenant -enablessh -Hostname "pestertest"
+            }
+        }
+
+        It "Get Edge Status" {
+            $status = Get-NsxEdge $name | Get-NsxEdgeStatus
+            $status | should not be $null
+            $status.systemStatus| should not be $null
+            $status.edgeStatus | should not be $null
+            $status.publishStatus| should not be $null
+        }
+
+        It "Get Edge Service Status" {
+            $service = Get-NsxEdge $name | Get-NsxEdgeStatus
+            $service | should not be $null
+            $service.featureStatuses.featureStatus | should not be $null
+        }
+
+        It "Get Edge Service Firewall Status" {
+            $service = Get-NsxEdge $name | Get-NsxEdgeStatus
+            $service | should not be $null
+            $service.featureStatuses.featureStatus | should not be $null
+            ($service.featureStatuses.featureStatus | where-object { $_.service -eq 'firewall' }).status | should not be $null
+        }
+
+    }
+
     Context "Interfaces" {
 
         BeforeAll{
@@ -692,6 +723,51 @@ Describe "Edge" {
             Get-NsxEdge $name | Enable-NsxEdgeSsh
             $edge = Get-NsxEdge $name
             $edge.cliSettings.remoteAccess | should be "true"
+        }
+    }
+
+    Context "CliSettings" {
+
+        it "Can retrieve cliSettings" {
+            $edge =  Get-NsxEdge $name
+            $edge.cliSettings | should not be $null
+            #By default it is admin
+            $edge.cliSettings.userName | should be "admin"
+            #By default it is 99999
+            $edge.cliSettings.passwordExpiry | should be "99999"
+        }
+
+        it "Can disable SSH" {
+            $edge = Get-NsxEdge $name
+            Get-NsxEdge $name | Set-NsxEdge -remoteAccess:$false -confirm:$false
+            $edge = Get-NsxEdge $name
+            $edge.cliSettings.remoteAccess | should be "false"
+        }
+
+        it "Can enable SSH" {
+            Get-NsxEdge $name | Set-NsxEdge -remoteAccess:$true -confirm:$false
+            $edge = Get-NsxEdge $name
+            $edge.cliSettings.remoteAccess | should be "true"
+        }
+
+        it "Change (SSH) username (and Password)" {
+            #it is mandatory to change username (and Password) on the same time (bug or feature ?)
+            Get-NsxEdge $name | Set-NsxEdge -userName powernsxviasetnsxedge -Password "Vmware1!Vmware1!" -confirm:$false
+            $edge = Get-NsxEdge $name
+            $edge.cliSettings.userName | should be "powernsxviasetnsxedge"
+            #It is impossible to check if the password is modified...
+        }
+
+        it "Change Password Expiry" {
+            Get-NsxEdge $name | Set-NsxEdge -passwordExpiry 4242 -confirm:$false
+            $edge = Get-NsxEdge $name
+            $edge.cliSettings.passwordExpiry | should be "4242"
+        }
+
+        it "Change sshLoginBannerText" {
+            Get-NsxEdge $name | Set-NsxEdge -sshLoginBannerText "Secured by Set-NsxEdge" -confirm:$false
+            $edge = Get-NsxEdge $name
+            $edge.cliSettings.sshLoginBannerText | should be "Secured by Set-NsxEdge"
         }
     }
 
