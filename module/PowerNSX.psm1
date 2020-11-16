@@ -7137,10 +7137,10 @@ function Set-NsxManagerRole {
         $ParsedXmlError = $false
         if ( $_ -match '.*(\<\?xml version="1\.0" encoding="UTF-8"\?\>\s.*)' ) {
             if ( $matches[1] -as [xml] ) {
-                $Error = [xml]$matches[1]
-                $ErrorCode = invoke-xpathquery -Node $error -QueryMethod SelectSingleNode -query "child::error/errorCode"
+                $Errormatch = [xml]$matches[1]
+                $ErrorCode = invoke-xpathquery -Node $Errormatch -QueryMethod SelectSingleNode -query "child::error/errorCode"
                 if ( $errorCode.'#text' -eq '125023') {
-                    write-warning $Error.error.details
+                    write-warning $Errormatch.error.details
                     $ParsedXmlError = $true
                 }
             }
@@ -31018,6 +31018,223 @@ function New-NsxLoadBalancerApplicationProfile {
     end {}
 }
 
+function Update-NsxLoadBalancerApplicationProfile {
+
+    <#
+    .SYNOPSIS
+    Creates a new LoadBalancer Application Profile on the specified
+    Edge Services Gateway.
+
+    .DESCRIPTION
+    An NSX Edge Service Gateway provides all NSX Edge services such as firewall,
+    NAT, DHCP, VPN, load balancing, and high availability.
+
+    The NSX Edge load balancer enables network traffic to follow multiple paths
+    to a specific destination. It distributes incoming service requests evenly
+    among multiple servers in such a way that the load distribution is
+    transparent to users. Load balancing thus helps in achieving optimal
+    resource utilization, maximizing throughput, minimizing response time, and
+    avoiding overload. NSX Edge provides load balancing up to Layer 7.
+
+    Application profiles define the behavior of a particular type of network
+    traffic. After configuring a profile, you associate the profile with a
+    virtual server. The virtual server then processes traffic according to the
+    values specified in the profile. Using profiles enhances your control over
+    managing network traffic, and makes traffic‐management tasks easier and more
+    efficient.
+
+    This cmdlet creates a new LoadBalancer Application Profile on a specified
+    Load Balancer
+
+    #>
+
+    param (
+
+        [Parameter (Mandatory=$true,ValueFromPipeline=$true,Position=1)]
+            [ValidateScript({ ValidateLoadBalancer $_ })]
+            [System.Xml.XmlElement]$LoadBalancer,
+        [Parameter (Mandatory=$True)]
+            [ValidateNotNullOrEmpty()]
+            [string]$Name,
+        [Alias("template")]
+        [Parameter (Mandatory=$False)]
+            [ValidateSet("TCP","UDP","HTTP","HTTPS")]
+            [string]$Type,
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [switch]$InsertXForwardedFor=$false,
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [switch]$SslPassthrough=$false,
+        [Alias("method")]
+        [Parameter (Mandatory=$False)]
+            [ValidateSet("ssl_sessionid", "cookie", "sourceip",  "msrdp", IgnoreCase=$false)]
+            [string]$PersistenceMethod,
+        [Alias("expire")]
+        [Parameter (Mandatory=$False)]
+            [int]$PersistenceExpiry,
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [string]$CookieName,
+        [Parameter (Mandatory=$False)]
+            [ValidateSet("insert", "prefix", "app")]
+            [string]$CookieMode,
+        [Alias("ciphers")]
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [string]$clientSslCiphers='DEFAULT',
+        [Alias("clientAuth")]
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [string]$clientSslClientAuth='ignore',
+        [Alias("serviceCertificate")]
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [string]$clientSslServiceCertificate,
+        [Parameter (Mandatory=$False)]
+            #PowerNSX Connection object
+            [ValidateNotNullOrEmpty()]
+            [PSCustomObject]$Connection=$defaultNSXConnection
+
+    )
+    # Still a bit to do here - need cert selection...
+    # Also - There are many combinations of valid (and invalid) options.  Unfortunately.
+    # the NSX API does not perform the validation of these combinations (It will
+    # accept combinations of params that the UI will not), the NSX UI does
+    # So I need to be doing validation in here as well - this is still to be done, but required
+    # so user has sane experience...
+    # Need to remove parameters that are set to $Null or find some other way of removing settings that are no longer wanted
+
+    begin {
+    }
+
+    process {
+
+        #Create private xml element from Current loadbalancer configuration
+        $_LoadBalancer = (Get-NsxEdge -objectId $LoadBalancer.edgeId | Get-NsxLoadBalancer).CloneNode($true)
+
+        #Store the edgeId and remove it from the XML as we need to post it...
+        $edgeId = $_LoadBalancer.edgeId
+        $_LoadBalancer.RemoveChild( $((Invoke-XPathQuery -QueryMethod SelectSingleNode -Node $_LoadBalancer -Query 'descendant::edgeId')) ) | out-null
+
+        if ( -not $_LoadBalancer.enabled -eq 'true' ) {
+            write-warning "Load Balancer feature is not enabled on edge $($edgeId).  Use Set-NsxLoadBalancer -Enabled to enable."
+        }
+
+
+        if ( (Invoke-XPathQuery -QueryMethod SelectSingleNode -Node $_LoadBalancer -Query 'descendant::applicationProfile')) {
+                $xmlapplicationProfile = $_LoadBalancer.applicationProfile | where-object { $_.name -eq $Name }
+        }
+
+        if (-not $xmlapplicationProfile) {
+            Throw "applicationProfile $Name Not Found"
+        }
+
+        #Mandatory Params and those with Default values
+        # Add-XmlElement -xmlRoot $xmlapplicationProfile -xmlElementName "name" -xmlElementText $Name
+        If ( $PsBoundParameters.ContainsKey('template')) {
+            $xmlapplicationProfile.template = $Type
+        }
+        If ( $PsBoundParameters.ContainsKey('insertXForwardedFor')) {
+            $xmlapplicationProfile.insertXForwardedFor = $insertXForwardedFor
+        }
+        If ( $PsBoundParameters.ContainsKey('sslPassthrough')) {
+            $xmlapplicationProfile.sslPassthrough = $SslPassthrough
+        }
+
+        #Optionals.
+        If ( $PsBoundParameters.ContainsKey('PersistenceMethod')) {
+            if ( -not $xmlapplicationProfile.persistence) {
+                [System.XML.XMLElement]$xmlPersistence = $_LoadBalancer.OwnerDocument.CreateElement("persistence")
+                $xmlapplicationProfile.appendChild($xmlPersistence) | out-null
+            } else {
+                $xmlPersistence = $xmlapplicationProfile.persistence
+            }
+            if (-not $xmlPersistence.method) {
+                Add-XmlElement -xmlRoot $xmlPersistence -xmlElementName "method" -xmlElementText $PersistenceMethod
+            } else {
+                $xmlPersistence.method = $PersistenceMethod
+            }
+            If ( $PsBoundParameters.ContainsKey('CookieName')) {
+                if (-not $xmlPersistence.cookieName) {
+                    Add-XmlElement -xmlRoot $xmlPersistence -xmlElementName "cookieName" -xmlElementText $CookieName
+                } else {
+                    $xmlPersistence.cookieName = $CookieName
+                }
+            }
+            If ( $PsBoundParameters.ContainsKey('CookieMode')) {
+                if (-not $xmlPersistence.cookieMode) {
+                    Add-XmlElement -xmlRoot $xmlPersistence -xmlElementName "cookieMode" -xmlElementText $CookieMode
+                } else {
+                    $xmlPersistence.cookieMode = $CookieMode
+                }
+            }
+            If ( $PsBoundParameters.ContainsKey('PersistenceExpiry')) {
+                if (-not $xmlPersistence.expire) {
+                    Add-XmlElement -xmlRoot $xmlPersistence -xmlElementName "expire" -xmlElementText $PersistenceExpiry
+                } else {
+                    $xmlPersistence.expire = $PersistenceExpiry
+                }
+            }
+        }
+
+        If ( $PsBoundParameters.ContainsKey('clientSslServiceCertificate')) {
+            if ( -not $xmlapplicationProfile.persistence) {
+                [System.XML.XMLElement]$xmlClientSsl = $_LoadBalancer.OwnerDocument.CreateElement("clientSsl")
+                $xmlapplicationProfile.appendChild($xmlClientSsl) | out-null
+            } else {
+                $xmlClientSsl = $xmlapplicationProfile.clientSsl
+            }
+            if (-not $xmlClientSsl.ciphers) {
+                Add-XmlElement -xmlRoot $xmlClientSsl -xmlElementName "ciphers" -xmlElementText $clientSslCiphers
+            } else {
+                $xmlClientSsl.ciphers = $clientSslCiphers
+            }
+            if (-not $xmlClientSsl.clientAuth) {
+                Add-XmlElement -xmlRoot $xmlClientSsl -xmlElementName "clientAuth" -xmlElementText $clientSslClientAuth
+            } else {
+                $xmlClientSsl.clientAuth = $clientSslClientAuth
+            }
+            if (-not $xmlClientSsl.serviceCertificate) {
+                Add-XmlElement -xmlRoot $xmlClientSsl -xmlElementName "serviceCertificate" -xmlElementText $clientSslServiceCertificate
+            } else {
+                $xmlClientSsl.serviceCertificate = $clientSslServiceCertificate
+            }
+        }
+
+        $URI = "/api/4.0/edges/$edgeId/loadbalancer/config"
+        $body = $_LoadBalancer.OuterXml
+
+        Write-Progress -activity "Update Edge Services Gateway $($edgeId)" -status "Load Balancer Config"
+        $response = invoke-nsxwebrequest -method "put" -uri $URI -body $body -connection $connection
+        write-progress -activity "Update Edge Services Gateway $($edgeId)" -completed
+
+        $updatedEdge = Get-NsxEdge -objectId $($edgeId) -connection $connection
+
+        $applicationProfiles = $updatedEdge.features.loadbalancer.applicationProfile
+        foreach ($applicationProfile in $applicationProfiles) {
+
+            #6.1 Bug? NSX API creates an object ID format that it does not accept back when put. We have to change on the fly to the 'correct format'.
+            write-debug "$($MyInvocation.MyCommand.Name) : Checking for stupidness in $($applicationProfile.applicationProfileId)"
+            $applicationProfile.applicationProfileId =
+                $applicationProfile.applicationProfileId.replace("edge_load_balancer_application_profiles","applicationProfile-")
+
+        }
+
+        $body = $updatedEdge.features.loadbalancer.OuterXml
+        Write-Progress -activity "Update Edge Services Gateway $($edgeId)" -status "Load Balancer Config"
+        $response = invoke-nsxwebrequest -method "put" -uri $URI -body $body -connection $connection
+        write-progress -activity "Update Edge Services Gateway $($edgeId)" -completed
+
+        #filter output for our newly created app profile - name is safe as it has to be unique.
+        $return = $updatedEdge.features.loadbalancer.applicationProfile | where-object { $_.name -eq $name }
+        Add-XmlElement -xmlroot $return -xmlElementName "edgeId" -xmlElementText $edgeId
+        $return
+    }
+
+    end {}
+}
+
 function Remove-NsxLoadBalancerApplicationProfile {
 
     <#
@@ -32424,7 +32641,7 @@ function New-NsxLoadBalancerApplicationRule {
         #Store the edgeId and remove it from the XML as we need to post it...
         $edgeId = $LoadBalancer.edgeId
 
-        if ( -not $_LoadBalancer.enabled -eq 'true' ) {
+        if ( -not $LoadBalancer.enabled -eq 'true' ) {
             write-warning "Load Balancer feature is not enabled on edge $($edgeId).  Use Set-NsxLoadBalancer -EnableLoadBalancing to enable."
         }
         #Create a new XML document. Use applicationRule as root.
@@ -34999,7 +35216,7 @@ function Set-NsxLoadBalancerPool {
         write-progress -activity "Update Edge Services Gateway $($EdgeId)" -completed
 
         $UpdatedEdge = Get-NsxEdge -objectId $($EdgeId) -connection $connection
-        $return = $UpdatedEdge.features.loadBalancer.pool | ? { $_.name -eq $poolname }
+        $return = $UpdatedEdge.features.loadBalancer.pool | Where-Object { $_.name -eq $poolname }
         Add-XmlElement -xmlroot $return -xmlElementName "edgeId" -xmlElementText $edgeId
         $return
     }
