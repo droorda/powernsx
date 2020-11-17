@@ -2560,14 +2560,14 @@ Function ValidateFirewallAppliedTo {
 
     #Check types first
     if (-not (
-         ($argument -is [System.Xml.XmlElement]) -or
-         ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.ClusterInterop] ) -or
-         ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.DatacenterInterop] ) -or
-         ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.VMHostInterop] ) -or
-         ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Host.Networking.VirtualPortGroupBaseInterop] ) -or
-         ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.ResourcePoolInterop] ) -or
-         ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.VirtualMachineInterop] ) -or
-         ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.VirtualDevice.NetworkAdapterInterop] ))) {
+        ($argument -is [System.Xml.XmlElement]) -or
+        ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.ClusterInterop] ) -or
+        ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.DatacenterInterop] ) -or
+        ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.VMHostInterop] ) -or
+        ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Host.Networking.VirtualPortGroupBaseInterop] ) -or
+        ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.ResourcePoolInterop] ) -or
+        ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.Inventory.VirtualMachineInterop] ) -or
+        ($argument -is [VMware.VimAutomation.ViCore.Interop.V1.VirtualDevice.NetworkAdapterInterop] ))) {
 
             throw "$($_.gettype()) is not a supported type.  Specify a Datacenter, Cluster, Host `
             DistributedPortGroup, PortGroup, ResourcePool, VirtualMachine, NetworkAdapter, `
@@ -3054,7 +3054,7 @@ Function ValidateVirtualMachineOrTemplate {
         $true
     }
 
-    Function ValidateTagAssignment {
+Function ValidateTagAssignment {
 
     Param (
         [Parameter (Mandatory=$true)]
@@ -30891,39 +30891,63 @@ function New-NsxLoadBalancerApplicationProfile {
 
         [Parameter (Mandatory=$true,ValueFromPipeline=$true,Position=1)]
             [ValidateScript({ ValidateLoadBalancer $_ })]
-            [System.Xml.XmlElement]$LoadBalancer,
+            [System.Xml.XmlElement]$LoadBalancer
+            ,
         [Parameter (Mandatory=$True)]
             [ValidateNotNullOrEmpty()]
-            [string]$Name,
+            [string]$Name
+            ,
         [Parameter (Mandatory=$True)]
             [ValidateSet("TCP","UDP","HTTP","HTTPS")]
-            [string]$Type,
+            [string]$Type
+            ,
         [Parameter (Mandatory=$False)]
             [ValidateNotNullOrEmpty()]
-            [switch]$InsertXForwardedFor=$false,
+            [switch]$InsertXForwardedFor=$false
+            ,
         [Parameter (Mandatory=$False)]
             [ValidateNotNullOrEmpty()]
-            [switch]$SslPassthrough=$false,
+            [switch]$SslPassthrough=$false
+            ,
         [Parameter (Mandatory=$False)]
             [ValidateSet("ssl_sessionid", "cookie", "sourceip",  "msrdp", IgnoreCase=$false)]
-            [string]$PersistenceMethod,
+            [string]$PersistenceMethod
+            ,
         [Parameter (Mandatory=$False)]
-            [int]$PersistenceExpiry,
+            [int]$PersistenceExpiry
+            ,
         [Parameter (Mandatory=$False)]
             [ValidateNotNullOrEmpty()]
-            [string]$CookieName,
+            [string]$CookieName
+            ,
         [Parameter (Mandatory=$False)]
             [ValidateSet("insert", "prefix", "app")]
-            [string]$CookieMode,
+            [string]$CookieMode
+            ,
         [Parameter (Mandatory=$False)]
             [ValidateNotNullOrEmpty()]
-            [string]$clientSslCiphers='DEFAULT',
+            [string]$clientSslCiphers='DEFAULT'
+            ,
         [Parameter (Mandatory=$False)]
             [ValidateNotNullOrEmpty()]
-            [string]$clientSslClientAuth='ignore',
+            [string]$clientSslClientAuth='ignore'
+            ,
         [Parameter (Mandatory=$False)]
             [ValidateNotNullOrEmpty()]
-            [string]$clientSslServiceCertificate,
+            [string]$clientSslServiceCertificate
+            ,
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [string]$serverSslCiphers='DEFAULT'
+            ,
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [bool]$serverSslServerAuth=$false
+            ,
+        [Parameter (Mandatory=$False)]
+            [ValidateNotNullOrEmpty()]
+            [string]$serverSslServiceCertificate
+            ,
         [Parameter (Mandatory=$False)]
             #PowerNSX Connection object
             [ValidateNotNullOrEmpty()]
@@ -30967,6 +30991,9 @@ function New-NsxLoadBalancerApplicationProfile {
             [System.XML.XMLElement]$xmlPersistence = $_LoadBalancer.OwnerDocument.CreateElement("persistence")
             $xmlapplicationProfile.appendChild($xmlPersistence) | out-null
             Add-XmlElement -xmlRoot $xmlPersistence -xmlElementName "method" -xmlElementText $PersistenceMethod
+            if (($PersistenceMethod -eq 'cookie') -and ((-not $CookieName) -or (-not $CookieMode)) ) {
+                Throw "PersistenceMethod of Cookie requires that CookieName and CookieMode must be Set"
+            }
             If ( $PsBoundParameters.ContainsKey('CookieName')) {
                 Add-XmlElement -xmlRoot $xmlPersistence -xmlElementName "cookieName" -xmlElementText $CookieName
             }
@@ -30983,6 +31010,14 @@ function New-NsxLoadBalancerApplicationProfile {
             Add-XmlElement -xmlRoot $xmlClientSsl -xmlElementName "ciphers" -xmlElementText $clientSslCiphers
             Add-XmlElement -xmlRoot $xmlClientSsl -xmlElementName "clientAuth" -xmlElementText $clientSslClientAuth
             Add-XmlElement -xmlRoot $xmlClientSsl -xmlElementName "serviceCertificate" -xmlElementText $clientSslServiceCertificate
+        }
+        If ( $PsBoundParameters.ContainsKey('serverSslServiceCertificate')) {
+            Add-XmlElement -xmlRoot $xmlapplicationProfile -xmlElementName "serverSslEnabled" -xmlElementText $true
+            [System.XML.XMLElement]$xmlServerSsl = $_LoadBalancer.OwnerDocument.CreateElement("serverSsl")
+            $xmlapplicationProfile.appendChild($xmlServerSsl) | out-null
+            Add-XmlElement -xmlRoot $xmlServerSsl -xmlElementName "ciphers" -xmlElementText $ServerSslCiphers
+            Add-XmlElement -xmlRoot $xmlServerSsl -xmlElementName "serverAuth" -xmlElementText "$ServerSslServerAuth"
+            Add-XmlElement -xmlRoot $xmlServerSsl -xmlElementName "serviceCertificate" -xmlElementText $ServerSslServiceCertificate
         }
 
         $URI = "/api/4.0/edges/$edgeId/loadbalancer/config"
@@ -31136,10 +31171,10 @@ function Update-NsxLoadBalancerApplicationProfile {
             $xmlapplicationProfile.template = $Type
         }
         If ( $PsBoundParameters.ContainsKey('insertXForwardedFor')) {
-            $xmlapplicationProfile.insertXForwardedFor = $insertXForwardedFor
+            $xmlapplicationProfile.insertXForwardedFor = "$insertXForwardedFor"
         }
         If ( $PsBoundParameters.ContainsKey('sslPassthrough')) {
-            $xmlapplicationProfile.sslPassthrough = $SslPassthrough
+            $xmlapplicationProfile.sslPassthrough = "$SslPassthrough"
         }
 
         #Optionals.
@@ -32309,7 +32344,7 @@ function Add-NsxLoadBalancerVip {
         [Parameter (Mandatory=$true)]
             [ValidateScript({ ValidateLoadBalancerApplicationProfile $_ })]
             [System.Xml.XmlElement]$ApplicationProfile,
-        [Parameter (Mandatory=$true)]
+        [Parameter (Mandatory=$false)]
             [ValidateScript({ ValidateLoadBalancerPool $_ })]
             [System.Xml.XmlElement]$DefaultPool,
         [Parameter (Mandatory=$False)]
@@ -32359,7 +32394,9 @@ function Add-NsxLoadBalancerVip {
         Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "connectionLimit" -xmlElementText $ConnectionLimit
         Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "connectionRateLimit" -xmlElementText $ConnectionRateLimit
         Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "applicationProfileId" -xmlElementText $ApplicationProfile.applicationProfileId
-        Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "defaultPoolId" -xmlElementText $DefaultPool.poolId
+        if ($DefaultPool){
+            Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "defaultPoolId" -xmlElementText $DefaultPool.poolId
+        }
         Add-XmlElement -xmlRoot $xmlVIip -xmlElementName "accelerationEnabled" -xmlElementText $AccelerationEnabled
 
         if ($applicationRuleId){
