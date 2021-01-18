@@ -13594,101 +13594,148 @@ function New-NsxEdge {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingUserNameAndPassWordParams", "", Scope="Function", Target="*")] # Unable to remove without breaking backward compatibilty.
     param (
         [Parameter (Mandatory=$true)]
-            #Name of the edge appliance.
-            [ValidateNotNullOrEmpty()]
-            [string]$Name,
+        #Name of the edge appliance.
+        [ValidateNotNullOrEmpty()]
+        [string]
+        $Name
+        ,
         [Parameter (Mandatory=$true,ParameterSetName="ResourcePool")]
-            #Resource pool into which to deploy the Edge.
-            [ValidateNotNullOrEmpty()]
-            [VMware.VimAutomation.ViCore.Interop.V1.Inventory.ResourcePoolInterop]$ResourcePool,
+        #Resource pool into which to deploy the Edge.
+        [ValidateNotNullOrEmpty()]
+        [VMware.VimAutomation.ViCore.Interop.V1.Inventory.ResourcePoolInterop]
+        $ResourcePool
+        ,
         [Parameter (Mandatory=$true,ParameterSetName="Cluster")]
-            #DRS Cluster into which to deploy the Edge.
-            [ValidateScript({
-                if ( $_ -eq $null ) { throw "Must specify Cluster."}
-                if ( -not $_.DrsEnabled ) { throw "Cluster is not DRS enabled."}
-                $true
-            })]
-            [VMware.VimAutomation.ViCore.Interop.V1.Inventory.ClusterInterop]$Cluster,
+        #DRS Cluster into which to deploy the Edge.
+        [ValidateScript({
+            if ( $_ -eq $null ) { throw "Must specify Cluster."}
+            if ( -not $_.DrsEnabled ) { throw "Cluster is not DRS enabled."}
+            $true
+        })]
+        [VMware.VimAutomation.ViCore.Interop.V1.Inventory.ClusterInterop]
+        $Cluster
+        ,
         [Parameter (Mandatory=$true)]
-            #Datastore onto which to deploy the edge appliance (If HA is enabled, use -HADatastore to specify an alternate location if desired.)
-            [ValidateNotNullOrEmpty()]
-            [VMware.VimAutomation.ViCore.Interop.V1.DatastoreManagement.DatastoreInterop]$Datastore,
+        #Datastore onto which to deploy the edge appliance (If HA is enabled, use -HADatastore to specify an alternate location if desired.)
+        [ValidateNotNullOrEmpty()]
+        [VMware.VimAutomation.ViCore.Interop.V1.DatastoreManagement.DatastoreInterop]
+        $Datastore
+        ,
         [Parameter (Mandatory=$false)]
-            #Cli account username.
-            [ValidateNotNullOrEmpty()]
-            [String]$Username="admin",
+        #Cli account username.
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Username="admin"
+        ,
         [Parameter (Mandatory=$false)]
-            #CLI account password
-            [ValidateNotNullOrEmpty()]
-            [String]$Password,
+        #CLI account password
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Password
+        ,
         [Parameter (Mandatory=$false)]
-            #Datastore onto which to deploy the HA edge appliance (Best practice is to use an alternative datastore/array to the first edge appliance in a HA pair.  Defaults to the same datastore as the first appliance.)
-            [ValidateNotNullOrEmpty()]
-            [VMware.VimAutomation.ViCore.Interop.V1.DatastoreManagement.DatastoreInterop]$HADatastore=$datastore,
+        #Datastore onto which to deploy the HA edge appliance (Best practice is to use an alternative datastore/array to the first edge appliance in a HA pair.  Defaults to the same datastore as the first appliance.)
+        [ValidateNotNullOrEmpty()]
+        [VMware.VimAutomation.ViCore.Interop.V1.DatastoreManagement.DatastoreInterop]
+        $HADatastore=$datastore
+        ,
         [Parameter (Mandatory=$false)]
-            #Formfactor for the deploye dedge appliance.
-            [ValidateSet ("compact","large","xlarge","quadlarge")]
-            [string]$FormFactor="compact",
+        #Formfactor for the deploye dedge appliance.
+        [ValidateSet ("compact","large","xlarge","quadlarge")]
+        [string]
+        $FormFactor="compact"
+        ,
         [Parameter (Mandatory=$false)]
-            #VI folder into which to place the edge in the VMs and Templates inventory.
-            [ValidateNotNullOrEmpty()]
-            [VMware.VimAutomation.ViCore.Interop.V1.Inventory.FolderInterop]$VMFolder,
+        #VI folder into which to place the edge in the VMs and Templates inventory.
+        [ValidateNotNullOrEmpty()]
+        [VMware.VimAutomation.ViCore.Interop.V1.Inventory.FolderInterop]
+        $VMFolder
+        ,
         [Parameter (Mandatory=$false)]
-            #Optional tenant string.
-            [ValidateNotNullOrEmpty()]
-            [String]$Tenant,
+        #Optional tenant string.
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Tenant
+        ,
         [Parameter (Mandatory=$false)]
-            #DNS hostname to configure on the edge appliance.  Defaults to the edge name.
-            [ValidateNotNullOrEmpty()]
-            [String]$Hostname=$Name,
+        #DNS hostname to configure on the edge appliance.  Defaults to the edge name.
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Hostname=$Name
+        ,
         [Parameter (Mandatory=$false)]
-            #Enable SSH
-            [ValidateNotNullOrEmpty()]
-            [switch]$EnableSSH=$false,
+        #Enable SSH
+        [ValidateNotNullOrEmpty()]
+        [switch]
+        $EnableSSH=$false
+        ,
         [Parameter (Mandatory=$false)]
-            #Enable autogeneration of edge firewall rules for enabled services.  Defaults to $true
-            [ValidateNotNullOrEmpty()]
-            [switch]$AutoGenerateRules=$true,
+        #Enable autogeneration of edge firewall rules for enabled services.  Defaults to $true
+        [ValidateNotNullOrEmpty()]
+        [switch]
+        $AutoGenerateRules=$true
+        ,
         [Parameter (Mandatory=$false)]
-            #Enable edge firewall.  Defaults to $true.
-            [switch]$FwEnabled=$true,
+        #Enable edge firewall.  Defaults to $true.
+        [switch]
+        $FwEnabled=$true
+        ,
         [Parameter (Mandatory=$false)]
-            #Set default firewall rule to allow.  Defaults to $false.
-            [switch]$FwDefaultPolicyAllow=$false,
+        #Set default firewall rule to allow.  Defaults to $false.
+        [switch]
+        $FwDefaultPolicyAllow=$false
+        ,
         [Parameter (Mandatory=$false)]
-            #Enable Firewall Logging.  Defaults to $true.
-            [switch]$FwLoggingEnabled=$true,
+        #Enable Firewall Logging.  Defaults to $true.
+        [switch]
+        $FwLoggingEnabled=$true
+        ,
         [Parameter (Mandatory=$false)]
-            #Enable HA on the deployed Edge.  Defaults to $false.
-            [ValidateNotNullOrEmpty()]
-            [switch]$EnableHa=$false,
+        #Enable HA on the deployed Edge.  Defaults to $false.
+        [ValidateNotNullOrEmpty()]
+        [switch]
+        $EnableHa=$false
+        ,
         [Parameter (Mandatory=$false)]
-            #Configure the Edge Appliance Dead Time.
-            [ValidateRange(3,900)]
-            [int]$HaDeadTime,
+        #Configure the Edge Appliance Dead Time.
+        [ValidateRange(3,900)]
+        [int]
+        $HaDeadTime
+        ,
         [Parameter (Mandatory=$false)]
-            #Configure the vNIC index used to send HA heartbeats.
-            [ValidateRange(0,9)]
-            [int]$HaVnic,
+        #Configure the vNIC index used to send HA heartbeats.
+        [ValidateRange(0,9)]
+        [int]
+        $HaVnic
+        ,
         [Parameter (Mandatory=$false)]
-            #Enable syslog.  Defaults to $false.
-            [switch]$EnableSyslog=$false,
+        #Enable syslog.  Defaults to $false.
+        [switch]
+        $EnableSyslog=$false
+        ,
         [Parameter (Mandatory=$false)]
-            #Configure the syslog server.
-            [ValidateNotNullOrEmpty()]
-            [string[]]$SyslogServer,
+        #Configure the syslog server.
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $SyslogServer
+        ,
         [Parameter (Mandatory=$false)]
-            #Configure the syslog protocol.
-            [ValidateSet("udp","tcp",IgnoreCase=$true)]
-            [string]$SyslogProtocol,
-       [Parameter (Mandatory=$true)]
-            #Define the Edge Interface configuration.  Specify a collection of one or more interface specs as created by New-NsxEdgeInterfaceSpec.
-            [ValidateScript({ ValidateEdgeInterfaceSpec $_ })]
-            [System.Xml.XmlElement[]]$Interface,
+        #Configure the syslog protocol.
+        [ValidateSet("udp","tcp",IgnoreCase=$true)]
+        [string]
+        $SyslogProtocol
+        ,
+        [Parameter (Mandatory=$true)]
+        #Define the Edge Interface configuration.  Specify a collection of one or more interface specs as created by New-NsxEdgeInterfaceSpec.
+        [ValidateScript({ ValidateEdgeInterfaceSpec $_ })]
+        [System.Xml.XmlElement[]]
+        $Interface
+        ,
         [Parameter (Mandatory=$False)]
-            #PowerNSX Connection object
-            [ValidateNotNullOrEmpty()]
-            [PSCustomObject]$Connection=$defaultNSXConnection
+        #PowerNSX Connection object
+        [ValidateNotNullOrEmpty()]
+        [PSCustomObject]
+        $Connection=$defaultNSXConnection
     )
 
     begin {}
@@ -13983,34 +14030,65 @@ function Set-NsxEdge {
     param (
 
         [Parameter (Mandatory=$true,ValueFromPipeline=$true)]
-            [ValidateScript({ ValidateEdge $_ })]
-            [System.Xml.XmlElement]$Edge,
+        [ValidateScript({ ValidateEdge $_ })]
+        [System.Xml.XmlElement]
+        $Edge
+        ,
         [Parameter (Mandatory=$False)]
-            #Prompt for confirmation.  Specify as -confirm:$false to disable confirmation prompt
-            [switch]$Confirm=$true,
+        #Prompt for confirmation.  Specify as -confirm:$false to disable confirmation prompt
+        [switch]
+        $Confirm=$true
+        ,
 
         #cliSettings
         [Parameter (Mandatory=$false)]
-            [ValidateNotNullorEmpty()]
-            [String]$userName,
+        [ValidateNotNullorEmpty()]
+        [String]
+        $userName
+        ,
         [Parameter (Mandatory=$false)]
-            [ValidateNotNullorEmpty()]
-            [String]$password,
+        [ValidateNotNullorEmpty()]
+        [String]
+        $password
+        ,
         [Parameter (Mandatory=$false)]
-            [ValidateNotNullorEmpty()]
-            [boolean]$remoteAccess,
+        [ValidateNotNullorEmpty()]
+        [boolean]
+        $remoteAccess
+        ,
         [Parameter (Mandatory=$false)]
-            [ValidateNotNullorEmpty()]
-            [ValidateRange(1,99999)]
-            [int]$passwordExpiry,
+        [ValidateNotNullorEmpty()]
+        [ValidateRange(1,99999)]
+        [int]
+        $passwordExpiry
+        ,
         [Parameter (Mandatory=$false)]
-            [ValidateNotNullorEmpty()]
-            [string]$sshLoginBannerText,
-
+        [ValidateNotNullorEmpty()]
+        [string]
+        $sshLoginBannerText
+        ,
+        [Parameter (Mandatory=$false)]
+        #Enable syslog.  Defaults to $false.
+        [switch]
+        $EnableSyslog
+        ,
+        [Parameter (Mandatory=$false)]
+        #Configure the syslog server.
+        [ValidateNotNullOrEmpty()]
+        [string[]]
+        $SyslogServer
+        ,
+        [Parameter (Mandatory=$false)]
+        #Configure the syslog protocol.
+        [ValidateSet("udp","tcp",IgnoreCase=$true)]
+        [string]
+        $SyslogProtocol
+        ,
         [Parameter (Mandatory=$False)]
-            #PowerNSX Connection object
-            [ValidateNotNullOrEmpty()]
-            [PSCustomObject]$Connection=$defaultNSXConnection
+        #PowerNSX Connection object
+        [ValidateNotNullOrEmpty()]
+        [PSCustomObject]
+        $Connection=$defaultNSXConnection
     )
 
     begin {
@@ -14072,6 +14150,52 @@ function Set-NsxEdge {
                 Add-XmlElement -xmlroot $_Edge.cliSettings -xmlElementName "sshLoginBannerText" -xmlElementText $sshLoginBannerText
             }
         }
+
+        if ( $PsBoundParameters.ContainsKey('EnableSyslog') ) {
+            if ( invoke-xpathquery -node $_Edge -querymethod SelectSingleNode -Query "child::features/syslog" ) {
+                $_Edge.features.syslog.enabled = $EnableSyslog.ToString().ToLower()
+            } else {
+                #Create the syslog element
+                [System.XML.XMLElement]$xmlSyslog = $XMLDoc.CreateElement("syslog")
+                $_Edge.features.appendChild($xmlSyslog) | out-null
+                Add-XmlElement -xmlRoot $xmlSyslog -xmlElementName "enabled" -xmlElementText $EnableSyslog.ToString().ToLower()
+
+                if ( $PsBoundParameters.containsKey('SyslogProtocol')) {
+                    Add-XmlElement -xmlRoot $xmlSyslog -xmlElementName "protocol" -xmlElementText $SyslogProtocol.ToString()
+                }
+
+                if ( $PsBoundParameters.containsKey('SyslogServer')) {
+                    [System.XML.XMLElement]$xmlServerAddresses = $XMLDoc.CreateElement("serverAddresses")
+                    $xmlSyslog.appendChild($xmlServerAddresses) | out-null
+                    foreach ( $server in $SyslogServer ) {
+                        Add-XmlElement -xmlRoot $xmlServerAddresses -xmlElementName "ipAddress" -xmlElementText $server.ToString()
+                    }
+                }
+
+            }
+        }
+        if ($_Edge.features.syslog.enabled -eq $true) {
+            if ( $PsBoundParameters.ContainsKey('SyslogProtocol') ) {
+                if ( invoke-xpathquery -node $_Edge -querymethod SelectSingleNode -Query "child::features/syslog/SyslogProtocol" ) {
+                    $_Edge.features.syslog.SyslogProtocol = $SyslogProtocol.ToString()
+                } else {
+                    Add-XmlElement -xmlroot $_Edge.features.syslog -xmlElementName "SyslogProtocol" -xmlElementText $SyslogProtocol.ToString()
+                }
+            }
+            if ( $PsBoundParameters.ContainsKey('SyslogServer') ) {
+                if ( invoke-xpathquery -node $_Edge -querymethod SelectSingleNode -Query "child::features/syslog/serverAddresses" ) {
+                    [System.XML.XMLElement]$xmlServerAddresses = $_Edge.features.syslog.serverAddresses
+                    $xmlServerAddresses.RemoveAll()
+                } else {
+                    [System.XML.XMLElement]$xmlServerAddresses = $_Edge.features.syslog.CreateElement("serverAddresses")
+                    $xmlSyslog.appendChild($xmlServerAddresses) | out-null
+                }
+                foreach ( $server in $SyslogServer ) {
+                    Add-XmlElement -xmlRoot $xmlServerAddresses -xmlElementName "ipAddress" -xmlElementText $server.ToString()
+                }
+            }
+        }
+
 
         $URI = "/api/4.0/edges/$($_Edge.Id)"
         $body = $_Edge.OuterXml
